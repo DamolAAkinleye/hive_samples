@@ -1,0 +1,196 @@
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement
+
+
+FROM from_statement
+
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ...] select_statement2] ...
+
+
+
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement
+
+
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 SELECT ... FROM ... FROM from_statement
+
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2]
+
+
+INSERT INTO  TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement
+
+
+INSERT OVERWRITE DIRECTORY '/tmp/hdfs_out' SELECT a.* FROM invites a WHERE a.ds='<DATE>';
+
+
+
+ INSERT OVERWRITE LOCAL DIRECTORY '/tmp/local_out' SELECT a.* FROM pokes a;
+
+INSERT OVERWRITE TABLE events SELECT a.* FROM profiles a;
+INSERT OVERWRITE TABLE events SELECT a.* FROM profiles a WHERE a.key < 100;
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/reg_3' SELECT a.* FROM events a;
+INSERT OVERWRITE DIRECTORY '/tmp/reg_4' select a.invites, a.pokes FROM profiles a;
+INSERT OVERWRITE DIRECTORY '/tmp/reg_5' SELECT COUNT(1) FROM invites a WHERE a.ds='<DATE>';
+INSERT OVERWRITE DIRECTORY '/tmp/reg_5' SELECT a.foo, a.bar FROM invites a;
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/sum' SELECT SUM(a.pc) FROM pc1 a;
+
+
+
+
+FROM src
+INSERT OVERWRITE TABLE dest1 SELECT src.* WHERE src.key < 100
+INSERT OVERWRITE TABLE dest2 SELECT src.key, src.value WHERE src.key >= 100 and src.key < 200
+INSERT OVERWRITE TABLE dest3 PARTITION(ds='2008-04-08', hr='12') SELECT src.key WHERE src.key >= 200 and src.key < 300
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/dest4.out' SELECT src.value WHERE src.key >= 300;
+
+
+hive> FROM invites a INSERT OVERWRITE TABLE events SELECT TRANSFORM(a.foo, a.bar) AS (oof, rab) USING '/bin/cat' WHERE a.ds > '2008-08-09';
+
+FROM t1
+INSERT OVERWRITE TABLE t2
+SELECT t3.c2, count(1)
+FROM t3
+WHERE t3.c1 <= 20
+GROUP BY t3.c2
+INSERT OVERWRITE DIRECTORY '/output_dir'
+SELECT t3.c2, avg(t3.c1)
+FROM t3
+WHERE t3.c1 > 20 AND t3.c1 <= 30
+GROUP BY t3.c2
+INSERT OVERWRITE LOCAL DIRECTORY '/home/dir'
+SELECT t3.c2, sum(t3.c1)
+FROM t3
+WHERE t3.c1 > 30
+GROUP BY t3.c2;
+
+  INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1 FROM from_statement;
+  INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement;
+  INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] (z,y) select_statement1 FROM from_statement;
+
+  FROM from_statement
+  INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1
+  [INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2]
+  [INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2] ...;
+
+  FROM from_statement
+  INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+  [INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2]
+  [INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2] ...;
+
+
+  INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+  INSERT INTO TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
+  SELECT ... FROM ...
+
+
+FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+
+
+ : DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+        [NULL DEFINED AS char] (Note: Only available starting with Hive 0.13)
+
+
+目录可以是一个全限定URI。如果没有指定schema，将使用hadoop配置变量fs.default.name指定的NameNode URI。
+如果使用了关键词LOCAL，Hive将写数据到本地文件系统的目录中。
+数据将以文本格式，列由^A分隔，行由换行分隔，存储到本地文件系统。如果有任意列不是原生类型，则这些列会被序列化成JSON格式。
+
+VALUES语句后的每一行都会被插入表tablename中。
+表中的每一列的值都必须提供。
+动态分区同样支持INSERT...SELECT方式。
+如果插入的表支持ACID，在使用支持ACID的事务管理，这个操作将会自动成功地完成提交。
+排序表（在创建表的时候，使用了SORTED BY词）不支持插入，更新和删除操作。
+Hive不支持复杂类型（array,map,struct ,union)，因此，它不能在INSERT INTO ...VALUES里使用。这意味着，用户不能使用INSERT INTO...　VALUES插入一个复杂数据类型列。
+INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]
+
+CREATE TABLE students (name VARCHAR(64), age INT, gpa DECIMAL(3, 2))
+  CLUSTERED BY (age) INTO 2 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE students
+  VALUES ('fred flintstone', 35, 1.28), ('barney rubble', 32, 2.32);
+
+
+CREATE TABLE pageviews (userid VARCHAR(64), link STRING, came_from STRING)
+  PARTITIONED BY (datestamp STRING) CLUSTERED BY (userid) INTO 256 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE pageviews PARTITION (datestamp = '2014-09-23')
+  VALUES ('jsmith', 'mail.com', 'sports.com'), ('jdoe', 'mail.com', null);
+
+INSERT INTO TABLE pageviews PARTITION (datestamp)
+  VALUES ('tjohnson', 'sports.com', 'finance.com', '2014-09-23'), ('tlee', 'finance.com', null, '2014-09-21');
+
+
+
+
+--values-->tabel
+-- INSERT...VALUES is available starting in Hive 0.14.
+INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]
+
+Where values_row is:
+( value [, value ...] )
+where a value is either null or any valid SQL literal
+
+
+CREATE TABLE students (name VARCHAR(64), age INT, gpa DECIMAL(3, 2))
+  CLUSTERED BY (age) INTO 2 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE students
+  VALUES ('fred flintstone', 35, 1.28), ('barney rubble', 32, 2.32);
+
+
+CREATE TABLE pageviews (userid VARCHAR(64), link STRING, came_from STRING)
+  PARTITIONED BY (datestamp STRING) CLUSTERED BY (userid) INTO 256 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE pageviews PARTITION (datestamp = '2014-09-23')
+  VALUES ('jsmith', 'mail.com', 'sports.com'), ('jdoe', 'mail.com', null);
+
+INSERT INTO TABLE pageviews PARTITION (datestamp)
+  VALUES ('tjohnson', 'sports.com', 'finance.com', '2014-09-23'), ('tlee', 'finance.com', null, '2014-09-21');
+
+
+
+-- 底层是使用mapreduce程序进行数据的导入操作的。命令如下：
+
+
+INSERT (OVERWRITE|INTO) TABLE tablename1 select_statement1 FROM from_statement where_statement;
+
+--使用overwrite和into的区别在于，overwrite是进行重写操作，也就是说会将原始数据进行删除。into是进行添加操作，原始数据不会进行删除。注意：当我们将from语句提到最前面的时候，我们可以进行多表插入。
+
+
+--table --> table
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1 FROM from_statement;
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement;
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] (z,y) select_statement1 FROM from_statement;
+
+-- Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2]
+[INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2] ...;
+
+FROM from_statement
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+[INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2]
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2] ...;
+
+-- Hive extension (dynamic partition inserts):
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+INSERT INTO TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+
+
+
+
+FROM page_view_stg pvs
+INSERT OVERWRITE TABLE page_view PARTITION(dt='2008-06-08', country)
+       SELECT pvs.viewTime, pvs.userid, pvs.page_url, pvs.referrer_url, null, null, pvs.ip, pvs.cnt
+
+
+
+

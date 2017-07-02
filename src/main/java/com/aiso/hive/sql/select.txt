@@ -1,0 +1,72 @@
+select * from dual a join dual b on a.key = b.key;
+select * from weblogin join webuser on weblogin.webuser_id=webuser.id where webuser.id=1
+
+select concat(key,concat('\073',key)) from dual;
+
+
+ALTER TABLE pokes ADD COLUMNS (new_col INT);
+ALTER TABLE events RENAME TO 3koobecaf;
+
+
+SELECT [ALL | DISTINCT] select_expr, select_expr, ...
+
+FROM table_reference
+
+[WHERE where_condition]
+
+[GROUP BY col_list [HAVING condition]]
+
+[   CLUSTER BY col_list
+
+| [DISTRIBUTE BY col_list] [SORT BY| ORDER BY col_list]
+
+]
+
+
+•ORDER BY 全局排序，只有一个Reduce任务
+
+•SORT BY 只在本机做排序
+
+SELECT * FROM t1 LIMIT 5
+
+SET mapred.reduce.tasks = 1
+SELECT * FROM test SORT BY amount DESC LIMIT 5
+
+
+查询除了 ds 和 hr 之外的所有列：
+
+SELECT `(ds|hr)?+.+` FROM test
+
+
+SELECT a.foo FROM invites a WHERE a.ds='<DATE>';
+
+
+•分号是SQL语句结束标记，在HiveQL中也是，但是在HiveQL中，对分号的识别没有那么智慧，例如：
+
+　　select concat(key,concat(';',key)) from dual;
+
+•但HiveQL在解析语句时提示：
+
+     FAILED: Parse Error: line 0:-1 mismatched input '<EOF>' expecting ) in function specification
+
+•解决的办法是，使用分号的八进制的ASCII码进行转义，那么上述语句应写成：
+
+　　select concat(key,concat('\073',key)) from dual;
+
+
+
+
+　　SQL中null代表空值, 值得警惕的是, 在HiveQL中String类型的字段若是空(empty)字符串, 即长度为0, 那么对它进行IS NULL的判断结果是False.
+4.4、Hive不支持将数据插入现有的表或分区中，
+仅支持覆盖重写整个表，示例如下：
+INSERT OVERWRITE TABLE t1
+SELECT * FROM t2; INSERT OVERWRITE TABLE t1SELECT * FROM t2;
+
+
+#虚拟列
+select INPUT__FILE__NAME, key, BLOCK__OFFSET__INSIDE__FILE from src;
+select key, count(INPUT__FILE__NAME) from src group by key order by key;
+select * from src where BLOCK__OFFSET__INSIDE__FILE > 12000 order by key;
+
+
+

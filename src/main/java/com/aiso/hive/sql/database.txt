@@ -1,0 +1,26 @@
+
+•show databases;
+
+
+DESCRIBE DATABASE [EXTENDED] db_name;
+DESCRIBE SCHEMA [EXTENDED] db_name;     -- (Note: Hive 0.15.0 and later)
+
+
+drop database db_hive_03 ;
+drop database db_hive_03 cascade;
+drop database if exists db_hive_03 ;
+
+
+
+create database db_hive_01 ;
+create database if not exists db_hive_02 ;  -->   标准
+create database if not exists db_hive_03 location '/user/beifeng/hive/warehouse/db_hive_03.db' ;
+show databases ;
+show databases like 'db_hive*' ;
+
+use db_hive ;
+desc database db_hive_03 ;
+desc database extended db_hive_03 ;
+
+
+

@@ -1,0 +1,57 @@
+
+--file --> table
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+
+--hdfs2tablea
+
+IMPORT [[EXTERNAL] TABLE new_or_original_tablename [PARTITION (part_column="value"[, ...])]]
+FROM 'source_path'
+[LOCATION 'import_target_path']
+
+import from 'hdfs_exports_location/department';
+
+import table imported_dept from 'hdfs_exports_location/department';
+
+import table employee partition (emp_country="us", emp_state="tn") from 'hdfs_exports_location/employee';
+
+import table department from 'hdfs_exports_location/department'
+       location 'import_target_location/department';
+
+import external table department from 'hdfs_exports_location/department';
+
+
+
+
+IMPORT [[EXTERNAL] TABLE new_or_original_tablename [PARTITION (part_column="value"[, ...])]]
+  FROM 'source_path'
+  [LOCATION 'import_target_path']
+
+import table emp from '/export/' ;
+load data local inpath '/opt/datas/user2.tsv' overwrite into table user2;
+
+
+--hdfs File 2 table
+import from 'hdfs_exports_location/department';
+import table imported_dept from 'hdfs_exports_location/department';
+import table employee partition (emp_country="us", emp_state="tn") from 'hdfs_exports_location/employee';
+import table department from 'hdfs_exports_location/department'
+       location 'import_target_location/department';
+import external table department from 'hdfs_exports_location/department';
+
+
+--hdfs2table
+
+IMPORT [[EXTERNAL] TABLE new_or_original_tablename [PARTITION (part_column="value"[, ...])]]
+FROM 'source_path'
+[LOCATION 'import_target_path']
+
+import from 'hdfs_exports_location/department';
+import table imported_dept from 'hdfs_exports_location/department';
+import table employee partition (emp_country="us", emp_state="tn") from 'hdfs_exports_location/employee';
+import table department from 'hdfs_exports_location/department'
+       location 'import_target_location/department';
+import external table department from 'hdfs_exports_location/department';
+
+
+

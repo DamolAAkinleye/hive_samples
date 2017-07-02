@@ -1,0 +1,54 @@
+join_table:
+   table_reference JOIN table_factor [join_condition]
+  | table_reference {LEFT|RIGHT|FULL} [OUTER] JOIN table_reference join_condition
+  | table_reference LEFT SEMI JOIN table_reference join_condition
+
+table_reference:
+    table_factor
+  | join_table
+
+table_factor:
+    tbl_name [alias]
+  | table_subquery alias
+  | ( table_references )
+
+join_condition:
+    ON equality_expression ( AND equality_expression )*
+
+equality_expression:
+    expression = expression
+
+•只支持等值join
+
+•SELECT a.* FROM a JOIN b ON (a.id = b.id)
+
+•SELECT a.* FROM a JOIN b
+    ON (a.id = b.id AND a.department = b.department)
+
+•可以 join 多于 2 个表，例如
+
+SELECT a.val, b.val, c.val FROM a JOIN b
+    ON (a.key = b.key1) JOIN c ON (c.key = b.key2)
+
+
+
+•如果join中多个表的 join key 是同一个，则 join 会被转化为单个 map/reduce 任务
+
+Hive不支持等值连接
+
+•SQL中对两表内联可以写成：
+
+select * from dual a,dual b where a.key = b.key;
+
+•Hive中应为
+
+select * from dual a join dual b on a.key = b.key;
+
+而不是传统的格式：
+
+SELECT t1.a1 as c1, t2.b1 as c2FROM t1, t2 WHERE t1.a2 = t2.b2
+
+
+
+
+

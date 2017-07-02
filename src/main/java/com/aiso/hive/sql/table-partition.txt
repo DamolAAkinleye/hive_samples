@@ -1,0 +1,497 @@
+
+CREATE TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(dt STRING, country STRING)
+ CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+ ROW FORMAT DELIMITED
+   FIELDS TERMINATED BY '\001'
+   COLLECTION ITEMS TERMINATED BY '\002'
+   MAP KEYS TERMINATED BY '\003'
+ STORED AS SEQUENCEFILE;
+
+
+ CREATE EXTERNAL TABLE page_view(viewTime INT, userid BIGINT,
+      page_url STRING, referrer_url STRING,
+      ip STRING COMMENT 'IP Address of the User',
+      country STRING COMMENT 'country of origination')
+  COMMENT 'This is the staging page view table'
+  ROW FORMAT DELIMITED FIELDS TERMINATED BY '\054'
+  STORED AS TEXTFILE
+  LOCATION '<hdfs_location>';
+
+  CREATE TABLE empty_key_value_store
+  LIKE key_value_store;
+
+
+CREATE TABLE c02_clickstat_fatdt1
+(yyyymmdd  string,
+ id              INT,
+ ip               string,
+ country          string,
+ cookie_id        string,
+ page_id          string  ,
+ clickstat_url_id int,
+ query_string     string,
+ refer            string
+)PARTITIONED BY(dt STRING)
+row format delimited fields terminated by '\005' stored as textfile;
+
+
+
+
+-- 1. 创建一个分区表，以 ds 为分区列：
+create table invites (id int, name string) partitioned by (ds string)
+row format delimited fields terminated by 't'
+stored as textfile;
+-- 2. 将数据添加到时间为 2013-08-16 这个分区中：
+load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-16');
+-- 3. 将数据添加到时间为 2013-08-20 这个分区中：
+load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-20');
+
+-- 5.  往一个分区表的某一个分区中添加数据：
+insert overwrite table invites partition (ds='2013-08-12') select id,max(name) from test group by id;
+-- 4. 从一个分区中查询数据：
+select * from invites where ds ='2013-08-12';
+
+show partitions invites;
+-- 可以查看分区的具体情况，使用命令：
+-- hadoop fs -ls /home/hadoop.hive/warehouse/invites
+-- 或者：
+-- show partitions tablename;
+
+
+静态分区表：
+
+一级分区表：
+
+复制代码
+CREATE TABLE order_created_partition (
+    orderNumber STRING
+  , event_time  STRING
+)
+PARTITIONED BY (event_month string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+复制代码
+加载数据方式一：从本地/HDFS目录加载
+
+load data local inpath '/home/spark/software/data/order_created.txt' overwrite into table order_created_partition PARTITION(event_month='2014-05');
+select * from order_created_partition where event_month='2014-05';
+复制代码
++-----------------+-----------------------------+--------------+
+|   ordernumber   |         event_time          | event_month  |
++-----------------+-----------------------------+--------------+
+| 10703007267488  | 2014-05-01 06:01:12.334+01  | 2014-05      |
+| 10101043505096  | 2014-05-01 07:28:12.342+01  | 2014-05      |
+| 10103043509747  | 2014-05-01 07:50:12.33+01   | 2014-05      |
+| 10103043501575  | 2014-05-01 09:27:12.33+01   | 2014-05      |
+| 10104043514061  | 2014-05-01 09:03:12.324+01  | 2014-05      |
++-----------------+-----------------------------+--------------+
+复制代码
+加载数据方式二：手工上传文件到hdfs上，然后将数据添加到分区表指定的分区：
+
+1) 创建hdfs目录：在hdfs目录：/user/hive/warehouse/order_created_partition目录下创建event_month=2014-06
+
+hadoop fs -mkdir /user/hive/warehouse/order_created_partition/event_month=2014-06
+2)拷贝数据到新创建的目录下：
+
+hadoop fs -put /home/spark/software/data/order_created.txt /user/hive/warehouse/order_created_partition/event_month=2014-06
+select * from order_created_partition where event_month='2014-06'; #发现查询结果是空的
+
+3)添加新分区数据到元数据信息中：
+
+msck repair table order_created_partition;
+输出日志信息：
+
+Partitions not in metastore: order_created_partition:event_month=2014-06
+Repair: Added partition to metastore order_created_partition:event_month=2014-06
+
+
+或者： alter table order_created_partition add partition(dt='2014-06');
+
+select * from order_created_partition where event_month='2014-06';
+复制代码
++-----------------+-----------------------------+--------------+
+|   ordernumber   |         event_time          | event_month  |
++-----------------+-----------------------------+--------------+
+| 10703007267488  | 2014-05-01 06:01:12.334+01  | 2014-06      |
+| 10101043505096  | 2014-05-01 07:28:12.342+01  | 2014-06      |
+| 10103043509747  | 2014-05-01 07:50:12.33+01   | 2014-06      |
+| 10103043501575  | 2014-05-01 09:27:12.33+01   | 2014-06      |
+| 10104043514061  | 2014-05-01 09:03:12.324+01  | 2014-06      |
++-----------------+-----------------------------+--------------+
+复制代码
+加载数据方式三：select查询方式insert/overwrite
+
+CREATE TABLE order_created_4_partition (
+    orderNumber STRING
+  , event_time  STRING
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+load data local inpath '/home/spark/software/data/order_created.txt' overwrite into table order_created_4_partition;
+
+insert into table order_created_partition partition(event_month='2014-07') select * from order_created_4_partition;
+insert overwrite table order_created_partition partition(event_month='2014-07') select * from order_created_4_partition;
+对比:
+
+insert overwrite table order_created_partition partition(event_month='2014-07') select ordernumber,event_time from order_created_4_partition;
+insert overwrite table order_created_partition partition(event_month='2014-07') select event_time,ordernumber from order_created_4_partition;
+发现字段值错位，在使用时一定要注意：字段值顺序要与表中字段顺序一致，名称可以不一致；
+
+查看分区表已有的所有分区：
+
+show partitions order_created_partition;
+查看分区表已有的指定分区：
+
+SHOW PARTITIONS order_created_partition PARTITION(event_month='2014-06');
+查看表字段信息：
+
+desc order_created_partition;
+desc extended order_created_partition;
+desc formatted order_created_partition;
+desc formatted order_created_partition partition(event_month='2014-05');
+
+
+
+
+二级分区表：
+
+复制代码
+CREATE TABLE order_created_partition2 (
+    orderNumber STRING
+  , event_time  STRING
+)
+PARTITIONED BY (event_month string, step string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+复制代码
+show partitions order_created_partition2;
+显示结果空
+
+load data local inpath '/home/spark/software/data/order_created.txt' into table order_created_partition2 partition(event_month='2014-09',step='1');
+show partitions order_created_partition2;
++-----------------------------+
+|           result            |
++-----------------------------+
+| event_month=2014-09/step=1  |
++-----------------------------+
+insert overwrite table order_created_partition2 partition(event_month='2014-09',step='2') select * from order_created_4_partition;
+show partitions order_created_partition2;
+复制代码
++-----------------------------+
+|           result            |
++-----------------------------+
+| event_month=2014-09/step=1  |
+| event_month=2014-09/step=2  |
++-----------------------------+
+复制代码
+
+
+动态分区表
+
+
+CREATE TABLE order_created_dynamic_partition (
+    orderNumber STRING
+  , event_time  STRING
+)
+PARTITIONED BY (event_month string)
+;
+复制代码
+
+
+insert into table order_created_dynamic_partition PARTITION (event_month)
+select orderNumber, event_time, substr(event_time, 1, 7) as event_month from order_created;
+
+报错：
+
+FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column.
+To turn this off set hive.exec.dynamic.partition.mode=nonstrict
+
+解决方案：
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+重新执行：
+
+insert into table order_created_dynamic_partition PARTITION (event_month)
+select orderNumber, event_time, substr(event_time, 1, 7) as event_month from order_created;
+select * from order_created_dynamic_partition;
+
+----------------
+
+hive中创建分区表没有什么复杂的分区类型(范围分区、列表分区、hash分区、混合分区等)。分区列也不是表中的一个实际的字段，而是一个或者多个伪列。意思是说在表的数据文件中实际上并不保存分区列的信息与数据。
+下面的语句创建了一个简单的分区表：
+
+create table partition_test
+(member_id string,
+name string
+)
+partitioned by (
+stat_date string,
+province string)
+row format delimited fields terminated by ',';
+
+这个例子中创建了stat_date和province两个字段作为分区列。通常情况下需要先预先创建好分区，然后才能使用该分区，例如：
+
+alter table partition_test add partition (stat_date='20110728',province='zhejiang');
+
+这样就创建好了一个分区。这时我们会看到hive在HDFS存储中创建了一个相应的文件夹：
+
+$ hadoop fs -ls /user/hive/warehouse/partition_test/stat_date=20110728
+Found 1 items
+drwxr-xr-x - admin supergroup 0 2011-07-29 09:53 /user/hive/warehouse/partition_test/stat_date=20110728/province=zhejiang
+
+每一个分区都会有一个独立的文件夹，下面是该分区所有的数据文件。在这个例子中stat_date是主层次，province是副层次，所有stat_date='20110728'，而province不同的分区都会在/user/hive/warehouse/partition_test/stat_date=20110728 下面，而stat_date不同的分区都会在/user/hive/warehouse/partition_test/ 下面，如：
+
+$ hadoop fs -ls /user/hive/warehouse/partition_test/
+Found 2 items
+drwxr-xr-x - admin supergroup 0 2011-07-28 19:46 /user/hive/warehouse/partition_test/stat_date=20110526
+drwxr-xr-x - admin supergroup 0 2011-07-29 09:53 /user/hive/warehouse/partition_test/stat_date=20110728
+
+注意，因为分区列的值要转化为文件夹的存储路径，所以如果分区列的值中包含特殊值，如 '%', ':', '/', '#',它将会被使用%加上2字节的ASCII码进行转义，如：
+
+hive> alter table partition_test add partition (stat_date='2011/07/28',province='zhejiang');
+OK
+Time taken: 4.644 seconds
+
+$hadoop fs -ls /user/hive/warehouse/partition_test/
+Found 3 items
+drwxr-xr-x - admin supergroup 0 2011-07-29 10:06 /user/hive/warehouse/partition_test/stat_date=2011/07/28
+drwxr-xr-x - admin supergroup 0 2011-07-28 19:46 /user/hive/warehouse/partition_test/stat_date=20110526
+drwxr-xr-x - admin supergroup 0 2011-07-29 09:53 /user/hive/warehouse/partition_test/stat_date=20110728
+
+我使用一个辅助的非分区表partition_test_input准备向partition_test中插入数据：
+
+hive> desc partition_test_input;
+OK
+stat_date string
+member_id string
+name string
+province string
+
+hive> select * from partition_test_input;
+OK
+20110526 1 liujiannan liaoning
+20110526 2 wangchaoqun hubei
+20110728 3 xuhongxing sichuan
+20110728 4 zhudaoyong henan
+20110728 5 zhouchengyu heilongjiang
+
+然后我向partition_test的分区中插入数据：
+
+hive> insert overwrite table partition_test partition(stat_date='20110728',province='henan') select member_id,name from partition_test_input where stat_date='20110728' and province='henan';
+Total MapReduce jobs = 2
+...
+1 Rows loaded to partition_test
+OK
+
+还可以同时向多个分区插入数据，0.7版本以后不存在的分区会自动创建，0.6之前的版本官方文档上说必须要预先创建好分区：
+
+hive>
+> from partition_test_input
+> insert overwrite table partition_test partition (stat_date='20110526',province='liaoning')
+> select member_id,name where stat_date='20110526' and province='liaoning'
+> insert overwrite table partition_test partition (stat_date='20110728',province='sichuan')
+> select member_id,name where stat_date='20110728' and province='sichuan'
+> insert overwrite table partition_test partition (stat_date='20110728',province='heilongjiang')
+> select member_id,name where stat_date='20110728' and province='heilongjiang';
+Total MapReduce jobs = 4
+...
+3 Rows loaded to partition_test
+OK
+
+特别要注意，在其他数据库中，一般向分区表中插入数据时系统会校验数据是否符合该分区，如果不符合会报错。而在hive中，向某个分区中插入什么样的数据完全是由人来控制的，因为分区键是伪列，不实际存储在文件中，如：
+
+
+hive> insert overwrite table partition_test partition(stat_date='20110527',province='liaoning') select member_id,name from partition_test_input;
+Total MapReduce jobs = 2
+...
+5 Rows loaded to partition_test
+OK
+
+hive> select * from partition_test where stat_date='20110527' and province='liaoning';
+OK
+1 liujiannan 20110527 liaoning
+2 wangchaoqun 20110527 liaoning
+3 xuhongxing 20110527 liaoning
+4 zhudaoyong 20110527 liaoning
+5 zhouchengyu 20110527 liaoning
+
+可以看到在partition_test_input中的5条数据有着不同的stat_date和province，但是在插入到partition(stat_date='20110527',province='liaoning')这个分区后，5条数据的stat_date和province都变成相同的了，因为这两列的数据是根据文件夹的名字读取来的，而不是实际从数据文件中读取来的：
+
+$ hadoop fs -cat /user/hive/warehouse/partition_test/stat_date=20110527/province=liaoning/000000_0
+1,liujiannan
+2,wangchaoqun
+3,xuhongxing
+4,zhudaoyong
+5,zhouchengyu
+
+下面介绍一下动态分区，因为按照上面的方法向分区表中插入数据，如果源数据量很大，那么针对一个分区就要写一个insert，非常麻烦。况且在之前的版本中，必须先手动创建好所有的分区后才能插入，这就更麻烦了，你必须先要知道源数据中都有什么样的数据才能创建分区。
+使用动态分区可以很好的解决上述问题。
+
+动态分区可以根据查询得到的数据自动匹配到相应的分区中去。
+使用动态分区要先设置hive.exec.dynamic.partition参数值为true，默认值为false，即不允许使用：
+
+hive> set hive.exec.dynamic.partition;
+hive.exec.dynamic.partition=false
+hive> set hive.exec.dynamic.partition=true;
+hive> set hive.exec.dynamic.partition;
+hive.exec.dynamic.partition=true
+
+动态分区的使用方法很简单，假设我想向stat_date='20110728'这个分区下面插入数据，至于province插入到哪个子分区下面让数据库自己来判断，那可以这样写：
+
+hive> insert overwrite table partition_test partition(stat_date='20110728',province)
+> select member_id,name,province from partition_test_input where stat_date='20110728';
+Total MapReduce jobs = 2
+...
+3 Rows loaded to partition_test
+OK
+
+stat_date叫做静态分区列，
+province叫做动态分区列。
+select子句中需要把动态分区列按照分区的顺序写出来，静态分区列不用写出来。
+这样stat_date='20110728'的所有数据，
+会根据province的不同分别插入到/user/hive/warehouse/partition_test/stat_date=20110728/下面的不同的子文件夹下，
+如果源数据对应的province子分区不存在，则会自动创建，非常方便，而且避免了人工控制插入数据与分区的映射关系存在的潜在风险。
+
+注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区：
+
+hive> insert overwrite table partition_test partition(stat_date,province='liaoning')
+> select member_id,name,province from partition_test_input where province='liaoning';
+FAILED: Error in semantic analysis: Line 1:48 Dynamic partition cannot be the parent of a static partition 'liaoning'
+
+动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode ：
+
+hive> set hive.exec.dynamic.partition.mode;
+hive.exec.dynamic.partition.mode=strict
+
+它的默认值是strick，即不允许分区列全部是动态的，这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。
+所以我们要设置：
+hive> set hive.exec.dynamic.partition.mode=nostrick;
+
+删除分区语法
+
+用户可以用 ALTER TABLE DROP PARTITION 来删除分区。分区的元数据和数据将被一并删除。例：
+ALTER TABLE day_hour_table DROP PARTITION (dt='2008-08-08', hour='09');
+数据加载进分区表中语法：
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+例：
+LOAD DATA INPATH '/user/pv.txt' INTO TABLE day_hour_table PARTITION(dt='2008-08- 08', hour='08');
+LOAD DATA local INPATH '/user/hua/*' INTO TABLE day_hour partition(dt='2010-07- 07');
+当数据被加载至表中时，不会对数据进行任何转换。Load操作只是将数据复制至Hive表对应的位置。数据加载时在表下自动创建一个目录
+
+再介绍3个参数：
+hive.exec.max.dynamic.partitions.pernode （缺省值100）：每一个mapreduce job允许创建的分区的最大数量，如果超过了这个数量就会报错
+hive.exec.max.dynamic.partitions （缺省值1000）：一个dml语句允许创建的所有分区的最大数量
+hive.exec.max.created.files （缺省值100000）：所有的mapreduce job允许创建的文件的最大数量
+
+当源表数据量很大时，单独一个mapreduce job中生成的数据在分区列上可能很分散，举个简单的例子，比如下面的表要用3个map：
+1
+1
+1
+2
+2
+2
+3
+3
+3
+
+如果数据这样分布，那每个mapreduce只需要创建1个分区就可以了：
+         |1
+map1 --> |1
+         |1
+
+         |2
+map2 --> |2
+         |2
+
+         |3
+map3 --> |3
+         |3
+但是如果数据按下面这样分布，那第一个mapreduce就要创建3个分区：
+
+         |1
+map1 --> |2
+         |3
+
+         |1
+map2 --> |2
+         |3
+
+         |1
+map3 --> |2
+         |3
+
+下面给出了一个报错的例子：
+hive> set hive.exec.max.dynamic.partitions.pernode=4;
+hive> insert overwrite table partition_test partition(stat_date,province)
+> select member_id,name,stat_date,province from partition_test_input distribute by stat_date,province;
+Total MapReduce jobs = 1
+...
+[Fatal Error] Operator FS_4 (id=4): Number of dynamic partitions exceeded hive.exec.max.dynamic.partitions.pernode.. Killing the job.
+Ended Job = job_201107251641_0083 with errors
+FAILED: Execution Error, return code 2 from org.apache.hadoop.hive.ql.exec.MapRedTask
+
+为了让分区列的值相同的数据尽量在同一个mapreduce中，这样每一个mapreduce可以尽量少的产生新的文件夹，
+可以借助distribute by的功能，将分区列值相同的数据放到一起：
+
+insert overwrite table partition_test partition(stat_date,province)
+ select member_id,name,stat_date,province from partition_test_input distribute by stat_date,province;
+Total MapReduce jobs = 1
+...
+18 Rows loaded to partition_test
+OK
+
+DESCRIBE [EXTENDED|FORMATTED] table_name[.column_name] PARTITION partition_spec;
+                                        -- (Note: Hive 1.x.x and 0.x.x only. See "Hive 2.0+: New Syntax" below)
+
+DESCRIBE [EXTENDED|FORMATTED] [db_name.]table_name [column_name] PARTITION partition_spec;
+                                        -- (Note: Hive 1.x.x and 0.x.x only. See "Hive 2.0+: New Syntax" below)
+show partitions part_table;
+ DESCRIBE extended part_table partition (d='abc');
+
+ DESCRIBE formatted part_table partition (d='abc');
+
+
+ -- 1. 创建一个分区表，以 ds 为分区列：
+ create table invites (id int, name string) partitioned by (ds string)
+ row format delimited fields terminated by 't'
+ stored as textfile;
+ -- 2. 将数据添加到时间为 2013-08-16 这个分区中：
+ load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-16');
+ -- 3. 将数据添加到时间为 2013-08-20 这个分区中：
+ load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-20');
+
+ -- 5.  往一个分区表的某一个分区中添加数据：
+ insert overwrite table invites partition (ds='2013-08-12') select id,max(name) from test group by id;
+ -- 4. 从一个分区中查询数据：
+ select * from invites where ds ='2013-08-12';
+
+ show partitions invites;
+ -- 可以查看分区的具体情况，使用命令：
+ -- hadoop fs -ls /home/hadoop.hive/warehouse/invites
+ -- 或者：
+ -- show partitions tablename;
+
+ create table invites (id int, name string) partitioned by (ds string) row format delimited fields terminated by 't' stored as textfile;
+
+ load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-16');
+ load data local inpath '/home/hadoop/Desktop/data.txt' overwrite into table invites partition (ds='2013-08-20');
+ select * from invites where ds ='2013-08-12';
+ insert overwrite table invites partition (ds='2013-08-12') select id,max(name) from test group by id;
+ show partitions tablename;
+
+
+
+ -- 在Hive Select查询中一般会扫描整个表内容，会消耗很多时间做没必要的工作。有时候只需要扫描表中关心的一部分数据，因此建表时引入了partition概念。分区表指的是在创建表时指定的partition的分区空间。
+
+ -- Hive可以对数据按照某列或者某些列进行分区管理，所谓分区我们可以拿下面的例子进行解释。
+ -- 当前互联网应用每天都要存储大量的日志文件，几G、几十G甚至更大都是有可能。存储日志，其中必然有个属性是日志产生的日期。在产生分区时，就可以按照日志产生的日期列进行划分。把每一天的日志当作一个分区。
+ -- 将数据组织成分区，主要可以提高数据的查询速度。至于用户存储的每一条记录到底放到哪个分区，由用户决定。即用户在加载数据的时候必须显示的指定该部分数据放到哪个分区。
+ -- 1.1 实现细节
+
+ -- 1、一个表可以拥有一个或者多个分区，每个分区以文件夹的形式单独存在表文件夹的目录下。
+ -- 2、表和列名不区分大小写。
+ -- 3、分区是以字段的形式在表结构中存在，通过describe table命令可以查看到字段存在， 但是该字段不存放实际的数据内容，仅仅是分区的表示（伪列） 。
+ -- 1.2 语法
+
+

@@ -1,0 +1,273 @@
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  [(col_name data_type [COMMENT col_comment], ...)]
+  [COMMENT table_comment]
+  [PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]
+  [CLUSTERED BY (col_name, col_name, ...) [SORTED BY (col_name [ASC|DESC], ...)] INTO num_buckets BUCKETS]
+  [
+   [ROW FORMAT row_format] [STORED AS file_format]
+   | STORED BY 'storage.handler.class.name' [ WITH SERDEPROPERTIES (...) ]
+  ]
+  [LOCATION hdfs_path]
+  [TBLPROPERTIES (property_name=property_value, ...)]  [AS select_statement]  CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  LIKE existing_table_name
+  [LOCATION hdfs_path]
+
+data_type
+  : primitive_type
+  | array_type
+  | map_type
+  | struct_type
+
+primitive_type
+  : TINYINT
+  | SMALLINT
+  | INT
+  | BIGINT
+  | BOOLEAN
+  | FLOAT
+  | DOUBLE
+  | STRING
+
+array_type
+  : ARRAY < data_type >
+
+map_type
+  : MAP < primitive_type, data_type >
+
+struct_type
+  : STRUCT < col_name : data_type [COMMENT col_comment], ...>
+
+row_format
+  : DELIMITED [FIELDS TERMINATED BY char] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+  | SERDE serde_name [WITH SERDEPROPERTIES (property_name=property_value, property_name=property_value, ...)]
+
+file_format:
+  : SEQUENCEFILE
+  | TEXTFILE
+  | RCFILE     (Note:  only available starting with 0.6.0)
+  | INPUTFORMAT input_format_classname OUTPUTFORMAT output_format_classname
+
+
+一个表可以拥有一个或者多个分区，每个分区以文件夹的形式单独存在表文件夹的目录下
+分区是以字段的形式在表结构中存在，通过describe table命令可以查看到字段存在，但是该字段不存放实际的数据内容，仅仅是分区的表示
+分区建表分为2种，一种是单分区，也就是说在表文件夹目录下只有一级文件夹目录。另外一种是多分区，表文件夹下出现多文件夹嵌套模式
+0.7版本以后不存在的分区会自动创建，0.6之前的版本官方文档上说必须要预先创建好分区：
+
+
+#添加分区
+  ALTER TABLE table_name ADD [IF NOT EXISTS] partition_spec [ LOCATION 'location1' ] partition_spec [ LOCATION 'location2' ] ...
+  partition_spec:
+    : PARTITION (partition_col = partition_col_value, partition_col = partiton_col_value, ...)
+
+
+ALTER TABLE c02_clickstat_fatdt1 DROP PARTITION (dt='20101202')
+
+Load=============================================
+LOAD DATA [LOCAL] INPATH 'filepath'
+[OVERWRITE] INTO TABLE tablename
+[PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+
+
+#删除分区
+ALTER TABLE table_name DROP partition_spec, partition_spec,...
+
+#重命名表
+ALTER TABLE table_name RENAME TO new_table_name;
+
+#修改列/属性
+ALTER TABLE table_name CHANGE [COLUMN] col_old_name col_new_name column_type;
+
+#添加/替换列
+ALTER TABLE table_name ADD|REPLACE COLUMNS (col_name data_type [COMMENT col_comment], ...)
+
+#创建视图
+CREATE VIEW [IF NOT EXISTS] view_name [ (column_name [COMMENT column_comment], ...) ]
+[COMMENT view_comment]
+[TBLPROPERTIES (property_name = property_value, ...)]
+AS SELECT ...
+
+
+
+#查看表名：
+
+SHOW TABLES;
+#查看表名，部分匹配：
+
+SHOW TABLES 'page.*';
+SHOW TABLES '.*view';
+#查看某表的所有Partition，如果没有就报错：
+
+SHOW PARTITIONS page_view;
+#查看某表结构：
+
+DESCRIBE invites;
+#查看分区内容：
+
+SELECT a.foo FROM invites a WHERE a.ds='2012-08-15';
+#查看有限行内容，同Greenplum，用limit关键词：
+
+SELECT a.foo FROM invites a limit 3;
+#查看表分区定义：
+
+DESCRIBE EXTENDED page_view PARTITION (ds='2013-08-08');
+
+
+
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement
+
+Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ...] select_statement2] ...
+
+Hive extension (dynamic partition inserts):
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement
+
+
+Standard syntax:
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 SELECT ... FROM ...
+
+FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+
+2.8删除
+删除一个内部表的同时会同时删除表的元数据和数据。删除一个外部表，只删除元数据而保留数据。
+
+DROP TABLE tbl_name
+
+2.9Limit/Top/REGEX
+Limit 可以限制查询的记录数。查询的结果是随机选择的。下面的查询语句从 t1 表中随机查询5条记录：
+SELECT * FROM t1 LIMIT 5
+
+下面的查询语句查询销售记录最大的 5 个销售代表。
+SET mapred.reduce.tasks = 1
+  SELECT * FROM sales SORT BY amount DESC LIMIT 5
+
+SELECT 语句可以使用正则表达式做列选择，下面的语句查询除了 ds 和 hr 之外的所有列：
+
+SELECT `(ds|hr)?+.+` FROM sales
+
+SELECT [ALL | DISTINCT] select_expr, select_expr, ...
+FROM table_reference
+[WHERE where_condition]
+[GROUP BY col_list]
+[   CLUSTER BY col_list
+  | [DISTRIBUTE BY col_list] [SORT BY col_list]
+]
+[LIMIT number]
+
+
+GROUP BY==========================================
+
+groupByClause: GROUP BY groupByExpression (, groupByExpression)*
+
+groupByExpression: expression
+
+groupByQuery: SELECT expression (, expression)* FROM src groupByClause
+
+Order by==========================================
+
+colOrder: ( ASC | DESC )
+orderBy: ORDER BY colName colOrder? (',' colName colOrder?)*
+query: SELECT expression (',' expression)* FROM src orderBy
+
+
+Sort By 语法： Sort顺序将根据列类型而定。如果数字类型的列，则排序顺序也以数字顺序。如果字符串类型的列，则排序顺序将字典顺序。
+colOrder: ( ASC | DESC )
+sortBy: SORT BY colName colOrder? (',' colName colOrder?)*
+query: SELECT expression (',' expression)* FROM src sortBy
+
+
+join========================================
+join_table:
+    table_reference JOIN table_factor [join_condition]
+  | table_reference {LEFT|RIGHT|FULL} [OUTER] JOIN table_reference join_condition
+  | table_reference LEFT SEMI JOIN table_reference join_condition
+
+table_reference:
+    table_factor
+  | join_table
+
+table_factor:
+    tbl_name [alias]
+  | table_subquery alias
+  | ( table_references )
+
+join_condition:
+    ON equality_expression ( AND equality_expression )*
+
+equality_expression:
+    expression = expression
+
+
+Hive 只支持等值连接（equality joins）、外连接（outer joins）和（left/right joins）。
+Hive 不支持所有非等值的连接，因为非等值连接非常难转化到 map/reduce 任务
+另外，Hive 支持多于 2 个表的连接
+
+
+只支持等值join 。
+SELECT a.* FROM a JOIN b ON (a.id = b.id)
+  SELECT a.* FROM a JOIN b
+    ON (a.id = b.id AND a.department = b.department)
+是正确的，然而:
+
+SELECT a.* FROM a JOIN b ON (a.id  b.id)
+是错误的。
+
+可以join多于2个表 。
+
+SELECT a.val, b.val, c.val FROM a JOIN b
+    ON (a.key = b.key1) JOIN c ON (c.key = b.key2)
+如果join中多个表的 join key 是同一个，则 join 会被转化为单个 map/reduce 任务，例如：
+
+SELECT a.val, b.val, c.val FROM a JOIN b
+    ON (a.key = b.key1) JOIN c
+    ON (c.key = b.key1)
+被转化为单个 map/reduce 任务，因为 join 中只使用了 b.key1 作为 join key。
+
+SELECT a.val, b.val, c.val FROM a JOIN b ON (a.key = b.key1)
+  JOIN c ON (c.key = b.key2)
+而这一 join 被转化为 2 个 map/reduce 任务。因为 b.key1 用于第一次 join 条件，而 b.key2 用于第二次 join。
+
+join 时，每次 map/reduce 任务的逻辑。
+reducer 会缓存 join 序列中除了最后一个表的所有表的记录，再通过最后一个表将结果序列化到文件系统。这一实现有助于在 reduce 端减少内存的使用量
+
+实践中，应该把最大的那个表写在最后（否则会因为缓存浪费大量内存）。例如：
+
+SELECT a.val, b.val, c.val FROM a
+    JOIN b ON (a.key = b.key1) JOIN c ON (c.key = b.key1)
+所有表都使用同一个 join key（使用 1 次 map/reduce 任务计算）。Reduce 端会缓存 a 表和 b 表的记录，然后每次取得一个 c 表的记录就计算一次 join 结果，类似的还有：
+
+SELECT a.val, b.val, c.val FROM a
+    JOIN b ON (a.key = b.key1) JOIN c ON (c.key = b.key2)
+这里用了 2 次 map/reduce 任务。第一次缓存 a 表，用 b 表序列化；第二次缓存第一次 map/reduce 任务的结果，然后用 c 表序列化。
+
+
+2.12UDF=====================================
+基本函数：
+
+SHOW FUNCTIONS;
+DESCRIBE FUNCTION <function_name>;
+
+
+2.13UDTF====================================
+UDTF即Built-in Table-Generating Functions 使用这些UDTF函数有一些限制:
+1、SELECT里面不能有其它字段，如：
+SELECT pageid, explode(adid_list) AS myCol...
+
+2、不能嵌套，如：
+SELECT explode(explode(adid_list)) AS myCol... ＃ 不支持
+
+3、不支持GROUP BY / CLUSTER BY / DISTRIBUTE BY / SORT BY ，如：
+SELECT explode(adid_list) AS myCol ... GROUP BY myCol
+
+
+2.14EXPLODE===============================
+场景：将数据进行转置
+create table test2(mycol array<int>);
+insert OVERWRITE table test2 select * from (select array(1,2,3) from a union all select array(7,8,9)  from d)c;
+hive> select * from test2;
+hive> SELECT explode(myCol) AS myNewCol FROM test2;

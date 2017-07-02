@@ -1,0 +1,1535 @@
+
+
+TRUNCATE TABLE table_name [PARTITION partition_spec];
+
+partition_spec:
+  : (partition_column = partition_col_value, partition_column = partition_col_value, ...)
+
+
+
+create table IF NOT EXISTS default.bf_log_20150913(
+ip string COMMENT 'remote ip address' ,
+user string ,
+req_url string COMMENT 'user request url')
+COMMENT 'BeiFeng Web Access Logs'
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ' '
+STORED AS TEXTFILE ;
+
+load data local inpath '/opt/data/bf-log.txt' into table default.bf_log_20150913;
+
+create table IF NOT EXISTS default.bf_log_20150913_sa AS select ip,req_url from default.bf_log_20150913 ;
+
+DROP (DATABASE|SCHEMA) [IF EXISTS] database_name [RESTRICT|CASCADE];
+
+CREATE (DATABASE|SCHEMA) [IF NOT EXISTS] database_name
+  [COMMENT database_comment]
+  [LOCATION hdfs_path]
+  [WITH DBPROPERTIES (property_name=property_value, ...)];
+
+
+create EXTERNAL table IF NOT EXISTS default.emp_ext2(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+location '/user/beifeng/hive/warehouse/emp_ext2';
+
+
+/hdfs/weblogs/
+	20150910.txt
+	20150911.txt
+	20150912.txt
+
+* 业务部门
+	* 日志进行分析
+	/user/user1/hive/
+		20150910.txt
+		20150911.txt
+		20150912.txt
+	* 机器学习
+	/user/user2/hive/
+
+
+
+create table IF NOT EXISTS default.emp(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+
+
+create table IF NOT EXISTS default.dept(
+deptno int,
+dname string,
+loc string
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+
+load data local inpath '/opt/datas/emp.txt' overwrite into table emp ;
+load data local inpath '/opt/datas/dept.txt' overwrite into table dept ;
+
+create table if not exists default.dept_cats
+as
+select * from dept ;
+
+truncate table dept_cats ;
+
+create table if not exists default.dept_like
+like
+default.dept ;
+
+
+create table db_hive.emp like default.emp ;
+
+
+
+alter table dept_like rename to dept_like_rename ;
+
+drop table if exists dept_like_rename ;
+
+
+
+
+
+
+DROP TABLE [IF EXISTS] table_name [PURGE];     -- (Note: PURGE available in Hive 0.14.0 and later)
+
+CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name    -- (Note: TEMPORARY available in Hive 0.14.0 and later)
+  [(col_name data_type [COMMENT col_comment], ...)]
+  [COMMENT table_comment]
+  [PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]
+  [CLUSTERED BY (col_name, col_name, ...) [SORTED BY (col_name [ASC|DESC], ...)] INTO num_buckets BUCKETS]
+  [SKEWED BY (col_name, col_name, ...)                  -- (Note: Available in Hive 0.10.0 and later)]
+     ON ((col_value, col_value, ...), (col_value, col_value, ...), ...)
+     [STORED AS DIRECTORIES]
+  [
+   [ROW FORMAT row_format]
+   [STORED AS file_format]
+     | STORED BY 'storage.handler.class.name' [WITH SERDEPROPERTIES (...)]  -- (Note: Available in Hive 0.6.0 and later)
+  ]
+  [LOCATION hdfs_path]
+  [TBLPROPERTIES (property_name=property_value, ...)]   -- (Note: Available in Hive 0.6.0 and later)
+  [AS select_statement];   -- (Note: Available in Hive 0.5.0 and later; not supported for external tables)
+
+CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name
+  LIKE existing_table_or_view_name
+  [LOCATION hdfs_path];
+
+data_type
+  : primitive_type
+  | array_type
+  | map_type
+  | struct_type
+  | union_type  -- (Note: Available in Hive 0.7.0 and later)
+
+primitive_type
+  : TINYINT
+  | SMALLINT
+  | INT
+  | BIGINT
+  | BOOLEAN
+  | FLOAT
+  | DOUBLE
+  | STRING
+  | BINARY      -- (Note: Available in Hive 0.8.0 and later)
+  | TIMESTAMP   -- (Note: Available in Hive 0.8.0 and later)
+  | DECIMAL     -- (Note: Available in Hive 0.11.0 and later)
+  | DECIMAL(precision, scale)  -- (Note: Available in Hive 0.13.0 and later)
+  | DATE        -- (Note: Available in Hive 0.12.0 and later)
+  | VARCHAR     -- (Note: Available in Hive 0.12.0 and later)
+  | CHAR        -- (Note: Available in Hive 0.13.0 and later)
+
+array_type
+  : ARRAY < data_type >
+
+map_type
+  : MAP < primitive_type, data_type >
+
+struct_type
+  : STRUCT < col_name : data_type [COMMENT col_comment], ...>
+
+union_type
+   : UNIONTYPE < data_type, data_type, ... >  -- (Note: Available in Hive 0.7.0 and later)
+
+row_format
+  : DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+        [NULL DEFINED AS char]   -- (Note: Available in Hive 0.13 and later)
+  | SERDE serde_name [WITH SERDEPROPERTIES (property_name=property_value, property_name=property_value, ...)]
+
+file_format:
+  : SEQUENCEFILE
+  | TEXTFILE    -- (Default, depending on hive.default.fileformat configuration)
+  | RCFILE      -- (Note: Available in Hive 0.6.0 and later)
+  | ORC         -- (Note: Available in Hive 0.11.0 and later)
+  | PARQUET     -- (Note: Available in Hive 0.13.0 and later)
+  | AVRO        -- (Note: Available in Hive 0.14.0 and later)
+  | INPUTFORMAT input_format_classname OUTPUTFORMAT output_format_classname
+
+
+
+CREATE TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(dt STRING, country STRING)
+ STORED AS SEQUENCEFILE;
+
+ CREATE TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(dt STRING, country STRING)
+ ROW FORMAT DELIMITED
+   FIELDS TERMINATED BY '\001'
+STORED AS SEQUENCEFILE;
+
+
+
+CREATE EXTERNAL TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User',
+     country STRING COMMENT 'country of origination')
+ COMMENT 'This is the staging page view table'
+ ROW FORMAT DELIMITED FIELDS TERMINATED BY '\054'
+ STORED AS TEXTFILE
+ LOCATION '<hdfs_location>';
+
+CREATE TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(dt STRING, country STRING)
+ CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+ ROW FORMAT DELIMITED
+   FIELDS TERMINATED BY '\001'
+   COLLECTION ITEMS TERMINATED BY '\002'
+   MAP KEYS TERMINATED BY '\003'
+ STORED AS SEQUENCEFILE;
+
+
+ CREATE TABLE new_key_value_store
+   ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
+   STORED AS RCFile
+   AS
+SELECT (key % 1024) new_key, concat(key, value) key_value_pair
+FROM key_value_store
+SORT BY new_key, key_value_pair;
+
+
+CREATE TABLE empty_key_value_store
+LIKE key_value_store;
+
+
+
+
+
+CREATE TABLE list_bucket_single (key STRING, value STRING)
+  SKEWED BY (key) ON (1,5,6) [STORED AS DIRECTORIES];
+
+
+CREATE TABLE list_bucket_multiple (col1 STRING, col2 int, col3 STRING)
+  SKEWED BY (col1, col2) ON (('s1',1), ('s3',3), ('s13',13), ('s78',78)) [STORED AS DIRECTORIES];
+
+
+
+ALTER TABLE table_name RENAME TO new_table_name;
+ALTER TABLE table_name SET TBLPROPERTIES table_properties;
+
+table_properties:
+  : (property_name = property_value, property_name = property_value, ... )
+ALTER TABLE table_name SET TBLPROPERTIES ('comment' = new_comment);
+
+ALTER TABLE table_name [PARTITION partition_spec] SET SERDE serde_class_name [WITH SERDEPROPERTIES serde_properties];
+
+ALTER TABLE table_name [PARTITION partition_spec] SET SERDEPROPERTIES serde_properties;
+
+serde_properties:
+  : (property_name = property_value, property_name = property_value, ... )
+
+
+ALTER TABLE table_name SET SERDEPROPERTIES ('field.delim' = ',');
+
+
+ALTER TABLE table_name CLUSTERED BY (col_name, col_name, ...) [SORTED BY (col_name, ...)]
+  INTO num_buckets BUCKETS;
+
+
+ALTER TABLE table_name SKEWED BY (col_name1, col_name2, ...)
+  ON ([(col_name1_value, col_name2_value, ...) [, (col_name1_value, col_name2_value), ...]
+  [STORED AS DIRECTORIES];
+
+
+ALTER TABLE table_name NOT SKEWED;
+
+ALTER TABLE table_name NOT STORED AS DIRECTORIES;
+
+
+ALTER TABLE table_name SET SKEWED LOCATION (col_name1="location1" [, col_name2="location2", ...] );
+
+--#####################################分区表#######################################
+create EXTERNAL table IF NOT EXISTS default.emp_partition(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+)
+partitioned by (month string,day string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' ;
+
+load data local inpath '/opt/datas/emp.txt' into table default.emp_partition partition (month='201509',day='13') ;
+
+select * from emp_partition where month = '201509' and day = '13' ;
+
+
+---修改分区
+ALTER TABLE table_name ADD [IF NOT EXISTS] PARTITION partition_spec
+  [LOCATION 'location1'] partition_spec [LOCATION 'location2'] ...;
+
+partition_spec:
+  : (partition_column = partition_col_value, partition_column = partition_col_value, ...)
+
+
+
+
+ALTER TABLE page_view ADD PARTITION (dt='2008-08-08', country='us') location '/path/to/us/part080808'
+                          PARTITION (dt='2008-08-09', country='us') location '/path/to/us/part080809';
+
+
+
+ALTER TABLE table_name ADD PARTITION (partCol = 'value1') location 'loc1';
+ALTER TABLE table_name ADD PARTITION (partCol = 'value2') location 'loc2';
+...
+ALTER TABLE table_name ADD PARTITION (partCol = 'valueN') location 'locN';
+
+ALTER TABLE table_name PARTITION partition_spec RENAME TO PARTITION partition_spec;
+
+ALTER TABLE table_name PARTITION partition_spec RENAME TO PARTITION partition_spec;
+
+ALTER TABLE table_name_1 EXCHANGE PARTITION (partition_spec) WITH TABLE table_name_2;
+-- multiple partitions
+ALTER TABLE table_name_1 EXCHANGE PARTITION (partition_spec, partition_spec2, ...) WITH TABLE table_name_2;
+
+
+MSCK REPAIR TABLE table_name;
+ALTER TABLE table_name RECOVER PARTITIONS;
+
+
+ALTER TABLE table_name DROP [IF EXISTS] PARTITION partition_spec[, PARTITION partition_spec, ...]
+  [IGNORE PROTECTION] [PURGE];            -- (Note: PURGE available in Hive 1.2.0 and later, IGNORE PROTECTION not available 2.0.0 and later)
+
+
+ALTER TABLE table_name DROP [IF EXISTS] PARTITION partition_spec IGNORE PROTECTION;
+
+
+
+ALTER TABLE table_name DROP [IF EXISTS] PARTITION partition_spec PURGE;     -- (Note: Hive 1.2.0 and later)
+
+ALTER TABLE page_view DROP PARTITION (dt='2008-08-08', country='us');
+
+ALTER TABLE table_name ARCHIVE PARTITION partition_spec;
+ALTER TABLE table_name UNARCHIVE PARTITION partition_spec;
+
+ALTER TABLE table_name [PARTITION partition_spec] SET FILEFORMAT file_format;
+
+ALTER TABLE table_name [PARTITION partition_spec] SET LOCATION "new location";
+ALTER TABLE table_name TOUCH [PARTITION partition_spec];
+
+ALTER TABLE table_name [PARTITION partition_spec] ENABLE|DISABLE NO_DROP [CASCADE];
+
+ALTER TABLE table_name [PARTITION partition_spec] ENABLE|DISABLE OFFLINE;
+
+ALTER TABLE table_name [PARTITION (partition_key = 'partition_value' [, ...])]
+  COMPACT 'compaction_type'
+  [WITH OVERWRITE TBLPROPERTIES ("property"="value" [, ...])];
+
+ALTER TABLE table_name [PARTITION (partition_key = 'partition_value' [, ...])] CONCATENATE;
+
+
+ALTER TABLE table_name [PARTITION partition_spec] CHANGE [COLUMN] col_old_name col_new_name column_type
+  [COMMENT col_comment] [FIRST|AFTER column_name] [CASCADE|RESTRICT];
+
+
+-- CREATE TABLE test_change (a int, b int, c int);
+
+-- // First change column a's name to a1.
+-- ALTER TABLE test_change CHANGE a a1 INT;
+
+-- // Next change column a1's name to a2, its data type to string, and put it after column b.
+-- ALTER TABLE test_change CHANGE a1 a2 STRING AFTER b;
+-- // The new table's structure is:  b int, a2 string, c int.
+
+-- // Then change column c's name to c1, and put it as the first column.
+-- ALTER TABLE test_change CHANGE c c1 INT FIRST;
+-- // The new table's structure is:  c1 int, b int, a2 string.
+
+-- // Add a comment to column a1
+-- ALTER TABLE test_change CHANGE a1 a1 INT COMMENT 'this is column a1';
+
+
+ALTER TABLE table_name
+  [PARTITION partition_spec]                 -- (Note: Hive 0.14.0 and later)
+  ADD|REPLACE COLUMNS (col_name data_type [COMMENT col_comment], ...)
+  [CASCADE|RESTRICT]                         -- (Note: Hive 0.15.0 and later)
+
+  ALTER TABLE foo PARTITION (ds='2008-04-08', hr=11) CHANGE COLUMN dec_column_name dec_column_name DECIMAL(38,18);
+ALTER TABLE foo PARTITION (ds='2008-04-08', hr=12) CHANGE COLUMN dec_column_name dec_column_name DECIMAL(38,18);
+
+
+// hive.exec.dynamic.partition needs to be set to true to enable dynamic partitioning with ALTER PARTITION
+SET hive.exec.dynamic.partition = true;
+
+// This will alter all existing partitions in the table with ds='2008-04-08' -- be sure you know what you are doing!
+ALTER TABLE foo PARTITION (ds='2008-04-08', hr) CHANGE COLUMN dec_column_name dec_column_name DECIMAL(38,18);
+
+// This will alter all existing partitions in the table -- be sure you know what you are doing!
+ALTER TABLE foo PARTITION (ds, hr) CHANGE COLUMN dec_column_name dec_column_name DECIMAL(38,18);
+
+
+
+  DESCRIBE [EXTENDED|FORMATTED]
+  table_name[.col_name ( [.field_name] | [.'$elem$'] | [.'$key$'] | [.'$value$'] )* ];
+                                        -- (Note: Hive 1.x.x and 0.x.x only. See "Hive 2.0+: New Syntax" below)
+DESCRIBE [EXTENDED|FORMATTED]
+  [db_name.]table_name[ col_name ( [.field_name] | [.'$elem$'] | [.'$key$'] | [.'$value$'] )* ];
+                                        -- (Note: Hive 1.x.x and 0.x.x only. See "Hive 2.0+: New Syntax" below)
+
+
+DESCRIBE FORMATTED [db_name.]table_name column_name;                              -- (Note: Hive 0.14.0 and later)
+DESCRIBE FORMATTED [db_name.]table_name column_name PARTITION (partition_spec);   -- (Note: Hive 0.14.0 to 1.x.x)
+                                                                                  -- (see "Hive 2.0+: New Syntax" below)
+																				DESCRIBE [EXTENDED | FORMATTED]
+    [db_name.]table_name [PARTITION partition_spec] [col_name ( [.field_name] | [.'$elem$'] | [.'$key$'] | [.'$value$'] )* ];
+
+
+DESCRIBE FORMATTED default.src_table PARTITION (part_col = 100) columnA;
+
+DESCRIBE default.src_thrift lintString.$elem$.myint;
+
+
+-- BucketedTables
+CREATE TABLE user_info_bucketed(user_id BIGINT, firstname STRING, lastname STRING)
+COMMENT 'A bucketed copy of user_info'
+PARTITIONED BY(ds STRING)
+CLUSTERED BY(user_id) INTO 256 BUCKETS;
+
+set hive.enforce.bucketing = true;  -- (Note: Not needed in Hive 2.x onward)
+FROM user_id
+INSERT OVERWRITE TABLE user_info_bucketed
+PARTITION (ds='2009-02-25')
+SELECT userid, firstname, lastname WHERE ds='2009-02-25';
+
+
+--##################################################添加数据##############################################
+
+--file --> table
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+
+--hdfs File 2 table
+
+IMPORT [[EXTERNAL] TABLE new_or_original_tablename [PARTITION (part_column="value"[, ...])]]
+FROM 'source_path'
+[LOCATION 'import_target_path']
+
+import from 'hdfs_exports_location/department';
+import table imported_dept from 'hdfs_exports_location/department';
+import table employee partition (emp_country="us", emp_state="tn") from 'hdfs_exports_location/employee';
+import table department from 'hdfs_exports_location/department'
+       location 'import_target_location/department';
+import external table department from 'hdfs_exports_location/department';
+
+
+
+
+
+
+
+
+--Table-->file
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
+  SELECT ... FROM ...
+
+
+
+-- Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+row_format
+  : DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+        [NULL DEFINED AS char] (Note: Only available starting with Hive 0.13)
+
+--table-->hdfs File
+EXPORT TABLE tablename [PARTITION (part_column="value"[, ...])]
+  TO 'export_target_path' [ FOR replication('eventid') ]
+export table department to 'hdfs_exports_location/department';
+export table employee partition (emp_country="in", emp_state="ka") to 'hdfs_exports_location/employee';
+export table employee to 'hdfs_exports_location/employee';
+
+
+--table --> table
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1 FROM from_statement;
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement;
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] (z,y) select_statement1 FROM from_statement;
+
+-- Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2]
+[INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2] ...;
+
+FROM from_statement
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+[INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2]
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2] ...;
+
+-- Hive extension (dynamic partition inserts):
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+INSERT INTO TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement;
+
+
+
+
+FROM page_view_stg pvs
+INSERT OVERWRITE TABLE page_view PARTITION(dt='2008-06-08', country)
+       SELECT pvs.viewTime, pvs.userid, pvs.page_url, pvs.referrer_url, null, null, pvs.ip, pvs.cnt
+
+
+
+
+
+
+--values-->tabel
+-- INSERT...VALUES is available starting in Hive 0.14.
+INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]
+
+Where values_row is:
+( value [, value ...] )
+where a value is either null or any valid SQL literal
+
+
+CREATE TABLE students (name VARCHAR(64), age INT, gpa DECIMAL(3, 2))
+  CLUSTERED BY (age) INTO 2 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE students
+  VALUES ('fred flintstone', 35, 1.28), ('barney rubble', 32, 2.32);
+
+
+CREATE TABLE pageviews (userid VARCHAR(64), link STRING, came_from STRING)
+  PARTITIONED BY (datestamp STRING) CLUSTERED BY (userid) INTO 256 BUCKETS STORED AS ORC;
+
+INSERT INTO TABLE pageviews PARTITION (datestamp = '2014-09-23')
+  VALUES ('jsmith', 'mail.com', 'sports.com'), ('jdoe', 'mail.com', null);
+
+INSERT INTO TABLE pageviews PARTITION (datestamp)
+  VALUES ('tjohnson', 'sports.com', 'finance.com', '2014-09-23'), ('tlee', 'finance.com', null, '2014-09-21');
+
+-- UPDATE is available starting in Hive 0.14.
+UPDATE tablename SET column = value [, column = value ...] [WHERE expression]
+
+
+-- In version 0.14 it is recommended that you set hive.optimize.sort.dynamic.partition=false when doing deletes, as this produces more efficient execution plans.
+set hive.optimize.sort.dynamic.partition=false
+DELETE FROM tablename [WHERE expression]
+
+
+
+
+
+
+
+  -- hive提供database的定义，database的主要作用是提供数据分割的作用，方便数据管理。命令如下:
+-- 创建:
+-- create (DATABASE|SCHEMA) [IF NOT EXISTS] database_name [COMMENT database_comment] [LOCATION hdfs_path] [WITH DBPROPERTIES (property_name=value,name=value....)]。
+-- 显示描述信息:describe DATABASE|SCHEMA [extended] database_name。
+-- 删除:DROP DATABASE|SCHEMA [IF EXISTS] database_name [RESTRICT|CASCADE]
+-- 使用: use database_name。
+
+
+-- Create (Database|schema) [IF NOT EXISTS] database_name
+-- [COMMENT database_comment]
+-- [LOCATION hdfs_path]
+-- [WITH DBPROPERTIES (property_name=property_value,...)];
+
+create table emp(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+)
+row format delimited fields terminated by "\t";
+
+create table dept(
+deptno int,
+dname string,
+loc string
+)
+row format delimited fields terminated by 't';
+
+
+
+
+create table helloworld(id int,name String) Row FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+load data local inpath '/home/hadoop/data/helloworld.txt' overwrite into table helloworld;
+
+---###########database############
+-- 创建:
+create (DATABASE|SCHEMA) [IF NOT EXISTS] database_name
+[COMMENT database_comment] [LOCATION hdfs_path]
+[WITH DBPROPERTIES (property_name=value,name=value....)]。
+-- 显示描述信息:
+describe DATABASE|SCHEMA [extended] database_name。
+-- 删除:
+DROP DATABASE|SCHEMA [IF EXISTS] database_name [RESTRICT|CASCADE]
+-- 使用: use database_name。
+
+
+--######table##########
+
+create table命令介绍
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS]
+[db_name.]table_name (col1_name col1_type [COMMENT col1_comment],....) -- 指定表的名称和表的具体列信息
+[COMMENT table_comment]  --表的描述信息
+[PARTITIONED BY (col_name col_type [COMMENT col_comment],...)]   -- 表的分区信息
+[CLUSTERED BY (col_name, col_name,....) [SORTED BY (col_name [ASC|DESC],...])] INTO num_buckets BUCKETS] -- 表的分桶信息
+[ROW FORMAT row_format] -- 表的数据分割信息，格式化信息
+[STORED AS file_format] -- 表数据的存储序列化信息
+[LOCATION hdfs_path];  -- 数据存储的文件夹地址信息
+
+
+create table命令介绍2
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS]
+[db_name.]table_name LIKE existing_table_or_view_name -- 指定要创建的表和已存在表/视图的名称
+[LOCATION hdfs_path]; -- 数据文件存储的hdfs文件地址信息
+
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS]
+[db_name.]table_name   -- 指定要创建的表名
+.... 指定partition&bucket等信息，指定数据分割符号。
+[AS select_statement]; -- 导入的数据
+
+
+
+describe (extended|formatted) table_name;
+drop table [if exists] table_name;
+truncate table table_name;
+alter table table_name rename to new_table_name;
+alter table table_name add colums (new-cls type,....);
+alter table table_name replace colums (new-cls type,....);
+
+-- 参考链接：https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Cli
+
+ -- 分别使用默认命令创建内部表test_manager、外部表test_external以及指定location的内部表test_location，然后分别删除这两个表，查看变化情况：命令如下：
+create table test_manager(id int);
+create external table test_external(id int);
+create table test_location(id int) location '/test_location';
+drop table test_manager;
+drop table test_external;
+drop table test_location;
+-- 删除表的时候，内部表不管是否指定location，均会删除文件夹，外部表一定不会删除。
+
+ -- 分别使用三种命令格式创建客户表customers，customers2，customers3，然后分别查看三张表(全部为内部表)的区别，命令如下：
+CREATE TABLE `customers`(`id` int,`name` string,`phone` string) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LOCATION 'hdfs://hh:8020/customers';
+CREATE TABLE `customers2` like `customers`;
+CREATE TABLE `customers3` AS SELECT * FROM `customers`;
+
+ -- 创建一个有复杂数据类型的hive表，并明确指定表数据的分隔符号，命令如下：
+create table complex_table_test(id int, name string, flag boolean, score array<int>, tech map<string,string>, other struct<phone:string,email:string>) row format delimited fields terminated by '\;' collection items terminated by ',' map keys terminated by ':' LOCATION 'hdfs://hh:8020/complex_table_test';
+
+ -- 创建一个使用hbase的外部表，也就是说hive表数据为hbase的数据，创建命令格式如下：
+CREATE EXTERNAL TABLE `hive_table_name`(key string, col1 type comment, col2 type comment,.....) -- 指定hive表的列名和表名
+ROW FORMAT SERDE 'org.apache.hadoop.hive.hbase.HBaseSerDe'
+STORED BY  'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIES ('hbase.columns.mapping'=':key,family1:col1,f1:col2,...fn:coln')  -- 指定格式化信息
+TBLPROPERTIES ('hbase.table.name'='hbase_tablename'); -- 指定hbase表名
+-- 注意：必须指定hbase的rowkey。
+
+
+--默认创建的表就是管理表
+--删除表，会连同表的文件一起删除
+create table page_view (
+track_time string,
+url string,
+session_id string,
+referer string,
+ip string,
+end_user_id string,
+city_id string
+)
+row format delimited fields terminated by "\t"
+stored  as textfile;
+
+load data local inpath '/opt/data/page_views.data' into table page_view;
+select count(1) from db_01.page_view;
+
+
+
+
+-- 创建外部表;
+create external table db_hive01.emp2(
+empno int,
+enpname string,
+job string,
+mgr int,
+hiredate string,
+salary double,
+comm double,
+detpno int
+)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/home/beifeng/emp.txt' into table emp2;
+
+		--删除表，不会删除HDFS上面的文件
+		--只删除表的相关元数据
+	-- * 多个业务系统使用同一套数据
+
+
+
+-- 创建分区表：
+-- 1、一个表可以拥有一个或者多个分区，每个分区以文件夹的形式单独存在表文件夹的目录下。
+-- 2、表和列名不区分大小写。
+-- 3、分区是以字段的形式在表结构中存在，通过describe table命令可以查看到字段存在， 但是该字段不存放实际的数据内容，仅仅是分区的表示（伪列） 。
+
+
+create table db_hive01.emp_partition(
+empno int,
+enpname string,
+job string,
+mgr int,
+hiredate string,
+salary double,
+comm double,
+detpno int
+)
+partitioned by (date string)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160618') ;
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160619') ;
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160620') ;
+
+
+select * from emp_partition where date='20160618';
+select * from emp_partition where date='20160619';
+
+
+--##############-orc###################
+create table sale (
+id int,
+timestamp timestamp,
+productsk int,
+storesk int,
+amount descimal,
+state string
+)
+stored as orc;
+
+create table addresses (
+name string,
+street string,
+city string,
+state string,
+zip int
+)
+stored as orc tblproperties ("orc.compress"="SNAPPY");
+
+create table page_view_orc_snappy(
+	track_time string,
+	url string,
+	session_id string,
+	referer string,
+	ip string,
+	end_user_id string,
+	city_id string
+)
+row format delimited fields terminated by "\t"
+stored as orc
+tblproperties ("orc.compression"="snappy'");
+
+-- ORC 和 parquet不能直接用load data
+
+insert overwrite table page_view_orc_snappy
+select * from page_view
+
+--orc+snappy
+create table  page_view_orc_snappy(
+track_time  string,
+url string,
+session_id string,
+referer string,
+ip string,
+end_user_id string,
+city_id string
+)
+row format delimited fields terminated by "\t"
+stored as orc
+tblproperties ("orc.compression"="snappy");
+
+insert overwrite table page_view_orc_snappy select * from page_view ;
+
+
+-- parquet
+
+create table parquet_test (
+	id int,
+	str string,
+	mp MAP<STRING,STRING>,
+	lst ARRAY<STRING>,
+	strct struct<A:STRING,B:STRING>
+)
+PARTITIONED BY (part string)
+stored as parquet;
+
+create table page_veiw_parquet_snappy(
+	track_time string,
+	url string,
+	session_id string,
+	referer string,
+	ip string,
+	end_user_id string,
+	city_id string
+)
+row format delimited fields terminated by "\t"
+stored as parquet
+tblproperties ("parquet.compression"="snappy");
+
+set parquet.compression=GZIP;
+insert overwrite table tinytable select * from texttable
+
+
+
+
+
+
+
+
+
+DROP DATABASE语句
+DROP DATABASE是删除所有的表并删除数据库的语句。它的语法如下：
+
+DROP DATABASE StatementDROP (DATABASE|SCHEMA) [IF EXISTS] database_name
+[RESTRICT|CASCADE];
+下面的查询用于删除数据库。假设要删除的数据库名称为userdb。
+
+hive> DROP DATABASE IF EXISTS userdb;
+以下是使用CASCADE查询删除数据库。这意味着要全部删除相应的表在删除数据库之前。
+
+hive> DROP DATABASE IF EXISTS userdb CASCADE;
+以下使用SCHEMA查询删除数据库。
+
+hive> DROP SCHEMA userdb;
+此子句中添加在Hive0.6版本。
+
+创建表：
+hive> CREATE TABLE pokes (foo INT, bar STRING);
+        Creates a table called pokes with two columns, the first being an integer and the other a string
+
+创建一个新表，结构与其他一样
+hive> create table new_table like records;
+
+创建分区表：
+hive> create table logs(ts bigint,line string) partitioned by (dt String,country String);
+
+加载分区表数据：
+hive> load data local inpath '/home/hadoop/input/hive/partitions/file1' into table logs partition (dt='2001-01-01',country='GB');
+
+展示表中有多少分区：
+hive> show partitions logs;
+
+展示所有表：
+hive> SHOW TABLES;
+        lists all the tables
+hive> SHOW TABLES '.*s';
+
+lists all the table that end with 's'. The pattern matching follows Java regular
+expressions. Check out this link for documentation
+
+显示表的结构信息
+hive> DESCRIBE invites;
+        shows the list of columns
+
+更新表的名称：
+hive> ALTER TABLE source RENAME TO target;
+
+添加新一列
+hive> ALTER TABLE invites ADD COLUMNS (new_col2 INT COMMENT 'a comment');
+
+删除表：
+hive> DROP TABLE records;
+删除表中数据，但要保持表的结构定义
+hive> dfs -rmr /user/hive/warehouse/records;
+
+从本地文件加载数据：
+hive> LOAD DATA LOCAL INPATH '/home/hadoop/input/ncdc/micro-tab/sample.txt' OVERWRITE INTO TABLE records;
+
+显示所有函数：
+hive> show functions;
+
+查看函数用法：
+hive> describe function substr;
+
+查看数组、map、结构
+hive> select col1[0],col2['b'],col3.c from complex;
+
+
+内连接：
+hive> SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+
+查看hive为某个查询使用多少个MapReduce作业
+hive> Explain SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+
+外连接：
+hive> SELECT sales.*, things.* FROM sales LEFT OUTER JOIN things ON (sales.id = things.id);
+hive> SELECT sales.*, things.* FROM sales RIGHT OUTER JOIN things ON (sales.id = things.id);
+hive> SELECT sales.*, things.* FROM sales FULL OUTER JOIN things ON (sales.id = things.id);
+
+in查询：Hive不支持，但可以使用LEFT SEMI JOIN
+hive> SELECT * FROM things LEFT SEMI JOIN sales ON (sales.id = things.id);
+
+
+Map连接：Hive可以把较小的表放入每个Mapper的内存来执行连接操作
+hive> SELECT /*+ MAPJOIN(things) */ sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+
+INSERT OVERWRITE TABLE ..SELECT：新表预先存在
+hive> FROM records2
+    > INSERT OVERWRITE TABLE stations_by_year SELECT year, COUNT(DISTINCT station) GROUP BY year
+    > INSERT OVERWRITE TABLE records_by_year SELECT year, COUNT(1) GROUP BY year
+    > INSERT OVERWRITE TABLE good_records_by_year SELECT year, COUNT(1) WHERE temperature != 9999 AND (quality = 0 OR quality = 1 OR quality = 4 OR quality = 5 OR quality = 9) GROUP BY year;
+
+CREATE TABLE ... AS SELECT：新表表预先不存在
+hive>CREATE TABLE target AS SELECT col1,col2 FROM source;
+
+创建视图：
+hive> CREATE VIEW valid_records AS SELECT * FROM records2 WHERE temperature !=9999;
+
+查看视图详细信息：
+hive> DESCRIBE EXTENDED valid_records;
+
+创建数据库是用来创建数据库在Hive中语句。在Hive数据库是一个命名空间或表的集合。此语法声明如下：
+
+CREATE DATABASE|SCHEMA [IF NOT EXISTS] <database name>
+在这里，IF NOT EXISTS是一个可选子句，通知用户已经存在相同名称的数据库。可以使用SCHEMA 在DATABASE的这个命令。下面的查询执行创建一个名为userdb数据库：
+
+hive> CREATE DATABASE [IF NOT EXISTS] userdb;
+或
+
+hive> CREATE SCHEMA userdb;
+下面的查询用于验证数据库列表：
+
+hive> SHOW DATABASES;
+default
+userdb
+
+
+创建表
+
+hive> CREATE TABLE pokes (foo INT, bar STRING);
+
+创建表并创建索引字段ds
+
+hive> CREATE TABLE invites (foo INT, bar STRING) PARTITIONED BY (ds STRING);
+
+显示所有表
+
+hive> SHOW TABLES;
+
+按正条件（正则表达式）显示表，
+
+hive> SHOW TABLES '.*s';
+
+表添加一列
+
+hive> ALTER TABLE pokes ADD COLUMNS (new_col INT);
+
+添加一列并增加列字段注释
+
+hive> ALTER TABLE invites ADD COLUMNS (new_col2 INT COMMENT 'a comment');
+
+更改表名
+
+hive> ALTER TABLE events RENAME TO 3koobecaf;
+
+删除列
+
+hive> DROP TABLE pokes;
+
+元数据存储
+
+将文件中的数据加载到表中
+
+hive> LOAD DATA LOCAL INPATH './examples/files/kv1.txt' OVERWRITE INTO TABLE pokes;
+
+加载本地数据，同时给定分区信息
+
+hive> LOAD DATA LOCAL INPATH './examples/files/kv2.txt' OVERWRITE INTO TABLE invites PARTITION (ds='2008-08-15');
+
+加载DFS数据 ，同时给定分区信息
+
+hive> LOAD DATA INPATH '/user/myname/kv2.txt' OVERWRITE INTO TABLE invites PARTITION (ds='2008-08-15');
+
+The above command will load data from an HDFS file/directory to the table. Note that loading data from HDFS will result in moving the file/directory. As a result, the operation is almost instantaneous.
+
+按先件查询
+
+hive> SELECT a.foo FROM invites a WHERE a.ds='<DATE>';
+
+将查询数据输出至目录
+
+hive> INSERT OVERWRITE DIRECTORY '/tmp/hdfs_out' SELECT a.* FROM invites a WHERE a.ds='<DATE>';
+
+将查询结果输出至本地目录
+
+hive> INSERT OVERWRITE LOCAL DIRECTORY '/tmp/local_out' SELECT a.* FROM pokes a;
+
+选择所有列到本地目录
+
+hive> INSERT OVERWRITE TABLE events SELECT a.* FROM profiles a;
+
+hive> INSERT OVERWRITE TABLE events SELECT a.* FROM profiles a WHERE a.key < 100;
+
+hive> INSERT OVERWRITE LOCAL DIRECTORY '/tmp/reg_3' SELECT a.* FROM events a;
+
+hive> INSERT OVERWRITE DIRECTORY '/tmp/reg_4' select a.invites, a.pokes FROM profiles a;
+
+hive> INSERT OVERWRITE DIRECTORY '/tmp/reg_5' SELECT COUNT(1) FROM invites a WHERE a.ds='<DATE>';
+
+hive> INSERT OVERWRITE DIRECTORY '/tmp/reg_5' SELECT a.foo, a.bar FROM invites a;
+
+hive> INSERT OVERWRITE LOCAL DIRECTORY '/tmp/sum' SELECT SUM(a.pc) FROM pc1 a;
+
+将一个表的统计结果插入另一个表中
+
+hive> FROM invites a INSERT OVERWRITE TABLE events SELECT a.bar, count(1) WHERE a.foo > 0 GROUP BY a.bar;
+
+hive> INSERT OVERWRITE TABLE events SELECT a.bar, count(1) FROM invites a WHERE a.foo > 0 GROUP BY a.bar;
+
+JOIN
+
+hive> FROM pokes t1 JOIN invites t2 ON (t1.bar = t2.bar) INSERT OVERWRITE TABLE events SELECT t1.bar, t1.foo, t2.foo;
+
+将多表数据插入到同一表中
+
+FROM src
+
+INSERT OVERWRITE TABLE dest1 SELECT src.* WHERE src.key < 100
+
+INSERT OVERWRITE TABLE dest2 SELECT src.key, src.value WHERE src.key >= 100 and src.key < 200
+
+INSERT OVERWRITE TABLE dest3 PARTITION(ds='2008-04-08', hr='12') SELECT src.key WHERE src.key >= 200 and src.key < 300
+
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/dest4.out' SELECT src.value WHERE src.key >= 300;
+
+将文件流直接插入文件
+
+hive> FROM invites a INSERT OVERWRITE TABLE events SELECT TRANSFORM(a.foo, a.bar) AS (oof, rab) USING '/bin/cat' WHERE a.ds > '2008-08-09';
+
+This streams the data in the map phase through the script /bin/cat (like Hadoop streaming). Similarly - streaming can be used on the reduce side (please see the Hive Tutorial or examples)
+
+实际示例
+
+创建一个表
+
+CREATE TABLE u_data (
+
+userid INT,
+
+movieid INT,
+
+rating INT,
+
+unixtime STRING)
+
+ROW FORMAT DELIMITED
+
+FIELDS TERMINATED BY '\t'
+
+STORED AS TEXTFILE;
+
+下载示例数据文件，并解压缩
+
+wget http://www.grouplens.org/system/files/ml-data.tar__0.gz
+
+tar xvzf ml-data.tar__0.gz
+
+加载数据到表中
+
+LOAD DATA LOCAL INPATH 'ml-data/u.data'
+
+OVERWRITE INTO TABLE u_data;
+
+统计数据总量
+
+SELECT COUNT(1) FROM u_data;
+
+现在做一些复杂的数据分析
+
+创建一个 weekday_mapper.py: 文件，作为数据按周进行分割
+
+import sys
+
+import datetime
+
+for line in sys.stdin:
+
+line = line.strip()
+
+userid, movieid, rating, unixtime = line.split('\t')
+
+生成数据的周信息
+
+weekday = datetime.datetime.fromtimestamp(float(unixtime)).isoweekday()
+
+print '\t'.join([userid, movieid, rating, str(weekday)])
+
+使用映射脚本
+
+//创建表，按分割符分割行中的字段值
+
+CREATE TABLE u_data_new (
+
+userid INT,
+
+movieid INT,
+
+rating INT,
+
+weekday INT)
+
+ROW FORMAT DELIMITED
+
+FIELDS TERMINATED BY '\t';
+
+//将Python文件加载到系统
+
+add FILE weekday_mapper.py;
+
+将数据按周进行分割
+
+INSERT OVERWRITE TABLE u_data_new
+
+SELECT
+
+TRANSFORM (userid, movieid, rating, unixtime)
+
+USING 'python weekday_mapper.py'
+
+AS (userid, movieid, rating, weekday)
+
+FROM u_data;
+
+SELECT weekday, COUNT(1)
+
+FROM u_data_new
+
+GROUP BY weekday;
+
+————————————————————————————————————————————————————
+
+hive update delete：
+
+关于 hive 的更新和删除问题，csdn 曾举办过活动来专门讨论过，
+http://10773851.42qu.com/10773869
+总结如下：
+
+HIVE是一个数据仓库系统,这就意味着它可以不支持普通数据库的CRUD操作。CRUD应该在导入HIVE数据仓库前完成。
+而且鉴于 hdfs 的特点，其并不能高效的支持流式访问，访问都是以遍历整个文件块的方式。hive 0.7 之后已经支持
+索引，但是很弱，尚没有成熟的线上方案。
+
+关于 hive 的删除和更新有如下办法：
+
+一、行级的更新和删除：通过 hbase 进行。
+数据保存在HBase中，Hive从HBase中查询数据，这个官方提供 hive-hbase-handler 插件支持，通过 thrift hive-service 进行通信
+
+优点：
+适用性比较普遍，单行和批量修改都可以使用，并且修改也比较方便；修改也比较快速。
+
+缺点：
+（1）查询的时候，性能较数据保存在HDFS的场景慢一些。
+（2）通过 hbase 删除可能会有延时导致脏数据，因为 habse 删数据是先逻辑删除，然后等待下一次 compact 再物理删除。
+（3）这种方式产生的 hive 表将不能再更改表结构，alt table 操作直接抛异常。
+（4）尚没有验证这种方案在大数据量的场景下的可行性。
+
+
+二、批量更新和删除：可以相应的使用 insert as select 的方式来实现。
+
+不更改HIVE的设计，利用HiveQL实现update和delete，虽然效率比较低，但是也可以实现update和delete操作。
+
+delete操作实现：
+用select语句筛选出不delete的数据，用这些数据覆盖原来的表，如我们想删除score在60分以下的行，可以用:
+INSERT OVERWRITE students SELECT students.* from students where score >= 60;
+
+update操作的实现：
+将要更新的数据从数据库中选出放入一个本地临时的文件中，如要更新60分以下的学生的数据，可以使用:
+INSERT OVERRITE LOCAL DIRECTORY "/tmp/students.1" SELECT students.* from students where score < 60;
+删除要更新的数据：
+INSERT OVERWRITE students SELECT students.* from students where score >=60;
+编辑要更新的数据文件或者将要修改的数据放入数据库表后再修改，修改结束后载入到表中：LOAD DATA INPATH "/tmp/students.1" INTO TABLE students如果对表进行分区，上述的update和delete速度会快一些。
+
+缺点：
+同一个操作扫描了 2 遍 hdfs，还不如 MR 批量更新来得快和简洁。
+
+-- set parquet.compression=SNAPPY;
+-- insert overwrite table tinytable select * from texttable;
+
+--parquet+snapy
+insert overwrite table page_view_parquet_snappy select * from page_view ;
+
+	创建表与加载数据、检索数据
+
+管理表（内部表）和外部表
+	管理表
+		--默认创建的表就是管理表
+		--删除表，会连同表的文件一起删除
+
+	外部表
+		--删除表，不会删除HDFS上面的文件
+		--只删除表的相关元数据
+	* 多个业务系统使用同一套数据
+
+
+create table default.emp_ci like emp ;
+insert into table default.emp_ci select * from default.emp ;
+5）创建表的时候通过location指定加载
+create table choice (
+userid int,
+classname string)
+row format delimited fields terminated by '\t'
+LOCATION '/data/test01/dacoolbaby/choice';
+
+一、 创建表
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  [(col_name data_type [COMMENT col_comment], ...)]
+  [COMMENT table_comment]
+  [PARTITIONED BY (col_name data_type
+    [COMMENT col_comment], ...)]
+  [CLUSTERED BY (col_name, col_name, ...)
+  [SORTED BY (col_name [ASC|DESC], ...)]
+  INTO num_buckets BUCKETS]
+  [ROW FORMAT row_format]
+  [STORED AS file_format]
+  [LOCATION hdfs_path]
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  [(col_name data_type [COMMENT col_comment], ...)]
+  [COMMENT table_comment]
+  [PARTITIONED BY (col_name data_type
+    [COMMENT col_comment], ...)]
+  [CLUSTERED BY (col_name, col_name, ...)
+  [SORTED BY (col_name [ASC|DESC], ...)]
+  INTO num_buckets BUCKETS]
+  [ROW FORMAT row_format]
+  [STORED AS file_format]
+  [LOCATION hdfs_path]
+
+
+    [ROW FORMAT DELIMITED]关键字，是用来设置创建的表在加载数据的时候，支持的列分隔符；
+[STORED AS file_format]关键字是用来设置加载数据的数据类型。Hive本身支持的文件格式只有：Text File，Sequence File。如果文件数据是纯文本，可以使用 [STORED AS TEXTFILE]。如果数据需要压缩，使用 [STORED AS SEQUENCE] 。通常情况，只要不需要保存序列化的对象，我们默认采用[STORED AS TEXTFILE]。
+
+
+
+    那么我们创建一张普通的hive表，hive sql就如下：
+
+
+CREATE TABLE test_1(id INT, name STRING, city STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+CREATE TABLE test_1(id INT, name STRING, city STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’
+
+
+    其中，hive支持的字段类型，并不多，可以简单的理解为数字类型和字符串类型，详细列表如下：
+
+
+TINYINT
+SMALLINT
+INT
+BIGINT
+BOOLEAN
+FLOAT
+DOUBLE
+STRING
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+TINYINT
+SMALLINT
+INT
+BIGINT
+BOOLEAN
+FLOAT
+DOUBLE
+STRING
+
+
+    Hive的表，与普通关系型数据库，如mysql在表上有很大的区别，所有hive的表都是一个文件，它是基于Hadoop的文件系统来做的。
+
+    hive总体来说可以总结为三种不同类型的表。
+
+
+
+
+
+2. 外部表
+
+
+    EXTERNAL 关键字可以让用户创建一个外部表，在建表的同时指定一个指向实际数据的路径（LOCATION），Hive 创建内部表时，会将数据移动到数据仓库指向的路径；若创建外部表，仅记录数据所在的路径，不对数据的位置做任何改变。在删除表的时候，内部表的元数据和数据会被一起删除，而外部表只删除元数据，不删除数据。具体sql如下：
+
+
+CREATE EXTERNAL TABLE test_1(id INT, name STRING, city STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’ LOCATION ‘hdfs://../../..’
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+CREATE EXTERNAL TABLE test_1(id INT, name STRING, city STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’ LOCATION ‘hdfs://../../..’
+
+
+3. 分区表
+
+
+    有分区的表可以在创建的时候使用 PARTITIONED BY 语句。一个表可以拥有一个或者多个分区，每一个分区单独存在一个目录下。而且，表和分区都可以对某个列进行 CLUSTERED BY 操作，将若干个列放入一个桶（bucket）中。也可以利用SORT BY 对数据进行排序。这样可以为特定应用提高性能。具体SQL如下：
+
+
+CREATE TABLE test_1(id INT, name STRING, city STRING) PARTITIONED BY (pt STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+CREATE TABLE test_1(id INT, name STRING, city STRING) PARTITIONED BY (pt STRING) SORTED BY TEXTFILE ROW FORMAT DELIMITED‘\t’
+    Hive的排序，因为底层实现的关系，比较不同于普通排序，这里先不讲。
+
+
+
+     桶的概念，主要是为性能考虑，可以理解为对分区内列，进行再次划分，提高性能。在底层，一个桶其实是一个文件。如果桶划分过多，会导致文件数量暴增，一旦达到系统文件数量的上限，就杯具了。哪种是最优数量，这个哥也不知道。
+
+
+
+    分区表实际是一个文件夹，表名即文件夹名。每个分区，实际是表名这个文件夹下面的不同文件。分区可以根据时间、地点等等进行划分。比如，每天一个分区，等于每天存每天的数据；或者每个城市，存放每个城市的数据。每次查询数据的时候，只要写下类似 where pt=2010_08_23这样的条件即可查询指定时间得数据。
+
+
+
+    总体而言，普通表，类似mysql的表结构，外部表的意义更多是指数据的路径映射。分区表，是最难以理解，也是最hive最大的优势。之后会专门针对分区表进行讲解。
+
+
+
+================
+
+SHOW COMPACTIONS;
+
+CREATE TABLE table_name (
+  id                int,
+  name              string
+)
+CLUSTERED BY (id) INTO 2 BUCKETS STORED AS ORC
+TBLPROPERTIES ("transactional"="true",
+  "compactor.mapreduce.map.memory.mb"="2048",     -- specify compaction map job properties
+  "compactorthreshold.hive.compactor.delta.num.threshold"="4",  -- trigger minor compaction if there are more than 4 delta directories
+  "compactorthreshold.hive.compactor.delta.pct.threshold"="0.5" -- trigger major compaction if the ratio of size of delta files to
+                                                                   -- size of base files is greater than 50%
+);
+
+ALTER TABLE table_name COMPACT 'minor'
+   WITH OVERWRITE TBLPROPERTIES ("compactor.mapreduce.map.memory.mb"="3072");  -- specify compaction map job properties
+ALTER TABLE table_name COMPACT 'major'
+   WITH OVERWRITE TBLPROPERTIES ("tblprops.orc.compress.size"="8192");         -- change any other Hive table properties
+
+
+ALTER TABLE table_name [PARTITION (partition_key = 'partition_value' [, ...])]
+  COMPACT 'compaction_type'
+  [WITH OVERWRITE TBLPROPERTIES ("property"="value" [, ...])];
+
+
+
+
+
+
+-----------------------------------
+CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  [(col_name data_type [COMMENT col_comment], ...)]
+  [COMMENT table_comment]
+  [PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]
+  [CLUSTERED BY (col_name, col_name, ...) [SORTED BY (col_name [ASC|DESC], ...)] INTO num_buckets BUCKETS]
+  [
+   [ROW FORMAT row_format] [STORED AS file_format]
+   | STORED BY 'storage.handler.class.name' [ WITH SERDEPROPERTIES (...) ]
+  ]
+  [LOCATION hdfs_path]
+  [TBLPROPERTIES (property_name=property_value, ...)]  [AS select_statement]  CREATE [EXTERNAL] TABLE [IF NOT EXISTS] table_name
+  LIKE existing_table_name
+  [LOCATION hdfs_path]
+
+data_type
+  : primitive_type
+  | array_type
+  | map_type
+  | struct_type
+
+primitive_type
+  : TINYINT
+  | SMALLINT
+  | INT
+  | BIGINT
+  | BOOLEAN
+  | FLOAT
+  | DOUBLE
+  | STRING
+
+array_type
+  : ARRAY < data_type >
+
+map_type
+  : MAP < primitive_type, data_type >
+
+struct_type
+  : STRUCT < col_name : data_type [COMMENT col_comment], ...>
+
+row_format
+  : DELIMITED [FIELDS TERMINATED BY char] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+  | SERDE serde_name [WITH SERDEPROPERTIES (property_name=property_value, property_name=property_value, ...)]
+
+file_format:
+  : SEQUENCEFILE
+  | TEXTFILE
+  | RCFILE     (Note:  only available starting with 0.6.0)
+  | INPUTFORMAT input_format_classname OUTPUTFORMAT output_format_classname
+
+
+CREATE EXTERNAL TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User',
+     country STRING COMMENT 'country of origination')
+ COMMENT 'This is the staging page view table'
+ ROW FORMAT DELIMITED FIELDS TERMINATED BY '\054'
+ STORED AS TEXTFILE
+ LOCATION '<hdfs_location>';
+
+
+将WEB日志先用正则表达式进行组合，再按需要的条件进行组合输入到表中
+add jar ../build/contrib/hive_contrib.jar;
+
+CREATE TABLE apachelog (
+host STRING,
+identity STRING,
+user STRING,
+time STRING,
+request STRING,
+status STRING,
+size STRING,
+referer STRING,
+agent STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES (
+"input.regex" = "([^ ]*) ([^ ]*) ([^ ]*) (-|//[[^//]]*//]) ([^ /"]*|/"[^/"]*/") (-|[0-9]*) (-|[0-9]*)(?: ([^ /"]*|/"[^/"]*/") ([^ /"]*|/"[^/"]*/"))?",
+"output.format.string" = "%1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s"
+)
+STORED AS TEXTFILE;
+
+
+
+CREATE TABLE par_table(viewTime INT, userid BIGINT,
+
+     page_url STRING, referrer_url STRING,
+
+     ip STRING COMMENT 'IP Address of the User')
+
+ COMMENT 'This is the page view table'
+
+ PARTITIONED BY(date STRING, pos STRING)
+
+ROW FORMAT DELIMITED ‘\t’
+
+   FIELDS TERMINATED BY '\n'
+
+STORED AS SEQUENCEFILE;
+
+CREATE TABLE u_data (
+userid INT,
+movieid INT,
+rating INT,
+unixtime STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '/t'
+STORED AS TEXTFILE;
+
+CREATE TABLE par_table(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(date STRING, pos STRING)
+ CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+ ROW FORMAT DELIMITED ‘\t’
+   FIELDS TERMINATED BY '\n'
+STORED AS SEQUENCEFILE;
+
+
+CREATE TABLE invites (foo INT, bar STRING) PARTITIONED BY (ds STRING);
+
+　CREATE TABLE empty_key_value_store
+
+　　LIKE key_value_store;
+ SHOW TABLES;
+
+ SHOW TABLES '.*s';
+
+CREATE TABLE pokes (foo INT, bar STRING);
+
+
+CREATE TABLE empty_key_value_store
+LIKE key_value_store
+
+CREATE TABLE test_change (a int, b int, c int);
+
+
+　　ALTER TABLE table_name RENAME TO new_table_name
+ ALTER TABLE events RENAME TO 3koobecaf;
+
+
+  DROP TABLE pokes;
+
+
+
+
+
+#用户可以用这个命令向表中增加metadata
+　ALTER TABLE table_name SET TBLPROPERTIES table_properties table_properties:
+         :[property_name = property_value…..]
+
+
+#改变表文件格式与组织
+　　ALTER TABLE table_name SET FILEFORMAT file_format
+　　ALTER TABLE table_name CLUSTERED BY(userid) SORTED BY(viewTime) INTO num_buckets BUCKETS
+　　这个命令修改了表的物理存储属性
+
+
+
+•ROW FORMAT
+    DELIMITED [FIELDS TERMINATED BY char] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+   | SERDE serde_name [WITH SERDEPROPERTIES (property_name=property_value, property_name=property_value, ...)]
+         用户在建表的时候可以自定义 SerDe 或者使用自带的 SerDe。如果没有指定 ROW FORMAT 或者 ROW FORMAT DELIMITED，将会使用自带的 SerDe。在建表的时候，用户还需要为表指定列，用户在指定表的列的同时也会指定自定义的 SerDe，Hive 通过 SerDe 确定表的具体的列的数据。
+
+•STORED AS
+
+            SEQUENCEFILE
+
+            | TEXTFILE
+
+            | RCFILE
+
+            | INPUTFORMAT input_format_classname OUTPUTFORMAT             output_format_classname
+
+       如果文件数据是纯文本，可以使用 STORED AS TEXTFILE。如果数据需要压缩，使用 STORED AS SEQUENCE
+
+

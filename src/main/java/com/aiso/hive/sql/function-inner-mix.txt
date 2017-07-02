@@ -1,0 +1,44 @@
+java_method(class,method[,arg1[,arg2..]])
+
+select java_method("java.lang.Math","sqrt",cast(id as double)) from winfunc;
+
+
+
+reflect(class,method[,arg1[,arg2..]])
+
+
+
+
+hash(a1[,a2..])
+
+
+
+-------------------------------
+
+select id,adid
+from winfunc
+lateral view explode (split(type,'B')) tt as adid;
+
+把 type字段按照B 进行分割 然后行转列
+
+列 转成多行
+
+ABC
+
+id A
+id C
+
+
+explode(array/map)
+
+
+select explode(map(1,'xx',2,'yy',3,'zz'));
+
+
+
+----------------------------------------------------
+row_number()
+
+
+
+-------------------------------------------------

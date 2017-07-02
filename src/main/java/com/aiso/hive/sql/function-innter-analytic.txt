@@ -1,0 +1,42 @@
+
+RANK() 返回数据项在分组中的排名，排名相等会在名次中留下空位
+
+DENSE_RANK() 返回数据项在分组中的排名，排名相等会在名次中不会留下空位
+
+ROW_NUMBER() 为每条记录返回一个数字
+
+
+Rank、DENSE_RANK
+RANK（）在出现等级相同的元素时预留为空，
+
+DENSE_RANK()不会。
+Eg：某产品类型有两个并列第一
+
+RANK()：第一二为1，第三位3
+
+
+DENSE_RANK()：第一二为1，第三位2
+SELECTcolumn_name,RANK() OVER （ORDER BY column_name DESC） AS rank,DENSE_RANK() OVER （ORDER BY SUM(column_name) DESC） AS dense_rankFROM table_name
+OVER 需要，括号内为编号顺序
+注意：order by 时，desc NULL 值排在首位，ASC时NULL值排在末尾
+可以通过NULLS LAST、NULLS FIRST 控制
+
+RANK() OVER (ORDER BY column_name DESC NULLS LAST)
+PARTITION BY 分组排列顺序
+
+RANK() OVER(PARTITION BY month ORDER BY column_name DESC)
+这样，就会按照month 来分，即所需要排列的信息先以month 的值来分组，在分组中排序，各个分组间不干涉
+
+CUBE,ROLLUP,GROUPING SETS() 详见：HIVE增强的聚合，也可以结合RANK()使用实现具体逻辑。
+
+----------------------------------
+NTILE() 返回n分片后的值
+按层次查询，如一年中，统计出工资前1/5之的人员的名单，
+使用NTILE分析函数,把所有工资分为5份，为1的哪一份就是我们想要的结果：
+
+select empno,ename,sum(sal),ntile(5) over (order by sum(sal) desc nulls last) til from emp group by empno,ename;
+
+-----------------------
+ROW_NUMBER()从1开始，为每条记录返回一个数字
+
+SELECT ROW_NUMBER() OVER (ORDER BY column_name DESC) AS row_nameFROM table_name;

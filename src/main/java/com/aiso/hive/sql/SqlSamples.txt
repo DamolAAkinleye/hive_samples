@@ -1,0 +1,224 @@
+create table user(id int,cont string)
+row format delimited fields terminated by ‘\005′
+stored as textfile
+
+
+CREATE TABLE page_view(viewTime INT, userid BIGINT,
+     page_url STRING, referrer_url STRING,
+     ip STRING COMMENT 'IP Address of the User')
+ COMMENT 'This is the page view table'
+ PARTITIONED BY(dt STRING, country STRING)
+ CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+ ROW FORMAT DELIMITED
+   FIELDS TERMINATED BY '\001'
+   COLLECTION ITEMS TERMINATED BY '\002'
+   MAP KEYS TERMINATED BY '\003'
+ STORED AS SEQUENCEFILE;
+
+
+ CREATE TABLE c02_clickstat_fatdt1
+ (yyyymmdd  string,
+  id              INT,
+  ip               string,
+  country          string,
+  cookie_id        string,
+  page_id          string  ,
+  clickstat_url_id int,
+  query_string     string,
+  refer            string
+ )PARTITIONED BY(dt STRING)
+ row format delimited fields terminated by '\005' stored as textfile;
+
+
+create external table db_hive01.emp2(
+empno int,
+enpname string,
+job string,
+mgr int,
+hiredate string,
+salary double,
+comm double,
+detpno int
+)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/home/beifeng/emp.txt' into table emp2;
+
+
+ CREATE EXTERNAL TABLE page_view(viewTime INT, userid BIGINT,
+      page_url STRING, referrer_url STRING,
+      ip STRING COMMENT 'IP Address of the User',
+      country STRING COMMENT 'country of origination')
+  COMMENT 'This is the staging page view table'
+  ROW FORMAT DELIMITED FIELDS TERMINATED BY '\054'
+  STORED AS TEXTFILE
+  LOCATION '<hdfs_location>';
+
+
+CREATE TABLE IF NOT EXISTS employee_hr( name string, employee_id int, sin_number string, start_date timestamp ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' STORED AS TEXTFILE;
+  例： hive> LOAD DATA LOCAL INPATH '/apps/ca/yanh/employee_hr.txt' OVERWRITE INTO TABLE employee_hr;
+
+CREATE TABLE pokes (foo INT, bar STRING);
+        Creates a table called pokes with two columns, the first being an integer and the other a string
+
+create table weblogin(id int,webuser_id int)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' lines terminated by '\n'
+STORED AS TEXTFILE
+
+
+create table new_table like records;
+create table logs(ts bigint,line string) partitioned by (dt String,country String);
+
+ load data local inpath '/home/hadoop/input/hive/partitions/file1' into table logs partition (dt='2001-01-01',country='GB');
+
+show partitions logs;
+ SHOW TABLES;
+SHOW TABLES '.*s';
+
+DESCRIBE invites;
+ALTER TABLE source RENAME TO target;
+ALTER TABLE invites ADD COLUMNS (new_col2 INT COMMENT 'a comment');
+DROP TABLE records;
+dfs -rmr /user/hive/warehouse/records;
+LOAD DATA LOCAL INPATH '/home/hadoop/input/ncdc/micro-tab/sample.txt' OVERWRITE INTO TABLE records;
+show functions;
+
+ describe function substr;
+
+#复制表
+CREATE TABLE empty_key_value_store
+LIKE key_value_store;
+
+分区表
+创建分区表：
+create table db_hive01.emp_partition(
+empno int,
+enpname string,
+job string,
+mgr int,
+hiredate string,
+salary double,
+comm double,
+detpno int
+)
+partitioned by (date string)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160618') ;
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160619') ;
+load data local inpath '/home/beifeng/emp.txt' into table emp_partition partition (date='20160620') ;
+
+
+#单分区建表语句
+create table day_table (id int, content string) partitioned by (dt string);
+#双分区建表语句
+create table day_hour_table (id int, content string) partitioned by (dt string, hour string)
+
+
+应用场景：
+	企业日志文件
+	20160617	--目录
+		2016061700	--目录/文件
+		2016061701
+		2016061702
+		...
+		2016061723
+	20160618
+		2016061800
+		...
+	20160619
+		...
+	...
+
+
+总结： 分区表功能
+			*  提高查询效率，减小检索范围
+			*  数据质量安全，不重复
+
+ show tables;
+ show functions;
+ desc table02;
+ desc formatted table02;
+
+LOAD DATA INPATH ‘/user/admin/user/a.txt’ OVERWRITE INTO TABLE user
+
+#HIVE装载数据没有做任何转换加载到表中的数据只是进入相应的配置单元表的位置移动数据文件。纯加载操作复制/移动操作。
+
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+Load 操作只是单纯的复制/移动操作，将数据文件移动到 Hive 表对应的位置。
+
+#从本地导入数据到表格并追加原表
+LOAD DATA LOCAL INPATH `/tmp/pv_2013-06-08_us.txt` INTO TABLE c02 PARTITION(date='2013-06-08', country='US')
+
+#从本地导入数据到表格并追加记录：
+LOAD DATA LOCAL INPATH './examples/files/kv1.txt' INTO TABLE pokes;
+
+#从hdfs导入数据到表格并覆盖原表：
+LOAD DATA INPATH '/user/admin/SqlldrDat/CnClickstat/20131101/18/clickstat_gp_fatdt0/0' INTO table c02_clickstat_fatdt1 OVERWRITE PARTITION (dt='20131201');
+关于来源的文本数据的字段间隔符 如果要将自定义间隔符的文件读入一个表，需要通过创建表的语句来指明输入文件间隔符，然后load data到这个表就ok了。
+
+#Insert时，from子句既可以放在select子句后，也可以放在insert子句前，下面两句是等价的
+ FROM invites a INSERT OVERWRITE TABLE events SELECT a.bar, count(*) WHERE a.foo > 0 GROUP BY a.bar;
+ INSERT OVERWRITE TABLE events SELECT a.bar, count(*) FROM invites a WHERE a.foo > 0 GROUP BY a.bar;
+需要注意的是，hive没有直接插入一条数据的sql，不过可以通过其他方法实现： 假设有一张表B至少有一条数据，我们想向表A（int，string）中插入一条数据，可以用下面的方法实现：
+from B insert table A select 1，‘abc’ limit 1；
+我觉得Hive好像不能够插入一个记录，因为每次你写INSERT语句的时候都是要将整个表的值OVERWRITE。
+我想这个应该是与Hive的storage layer是有关系的，因为它的存储层是HDFS，插入一个数据要全表扫描，还不如用整个表的替换来的快些。
+注：Hive不支持一条一条的用insert语句进行插入操作，也不支持update的操作。数据是以load的方式，加载到建立好的表中。数据一旦导入，则不可修改。要么drop掉整个表，要么建立新的表，导入新的数据。
+
+#添加分区
+ALTER TABLE c02_clickstat_fatdt1 ADD
+PARTITION (dt='20131202') location '/user/hive/warehouse/c02_clickstat_fatdt1/part20131202'
+PARTITION (dt='20131203') location '/user/hive/warehouse/c02_clickstat_fatdt1/part20131203';
+
+desc xi;
+
+create table xibak like xi;
+
+ alter table xibak replace columns (ins_date string);
+
+ desc xibak;
+
+ 
+
+from tbl1
+insert overwrite  table test2 select  '1,2,3' limit 1
+insert overwrite  table d select  '4,5,6' limit 1;
+
+
+#导出文件到本地：
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/local_out' SELECT a.* FROM pokes a;
+#导出文件到HDFS：
+INSERT OVERWRITE DIRECTORY '/user/admin/SqlldrDat/CnClickstat/20131101/19/clickstat_gp_fatdt0/0' SELECT a.* FROM c02_clickstat_fatdt1 a WHERE dt=’20131201’;
+一个源可以同时插入到多个目标表或目标文件，多目标insert可以用一句话来完成：
+
+FROM src
+  INSERT OVERWRITE TABLE dest1 SELECT src.* WHERE src.key < 100
+  INSERT OVERWRITE TABLE dest2 SELECT src.key, src.value WHERE src.key >= 100 and src.key < 200
+  INSERT OVERWRITE TABLE dest3 PARTITION(ds='2013-04-08', hr='12') SELECT src.key WHERE src.key >= 200 and src.key < 300
+  INSERT OVERWRITE LOCAL DIRECTORY '/tmp/dest4.out' SELECT src.value WHERE src.key >= 300;
+
+
+select col1[0],col2['b'],col3.c from complex;
+SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+Explain SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+SELECT sales.*, things.* FROM sales LEFT OUTER JOIN things ON (sales.id = things.id);
+ SELECT sales.*, things.* FROM sales RIGHT OUTER JOIN things ON (sales.id = things.id);
+SELECT sales.*, things.* FROM sales FULL OUTER JOIN things ON (sales.id = things.id);
+
+#in查询：Hive不支持，但可以使用LEFT SEMI JOIN
+SELECT * FROM things LEFT SEMI JOIN sales ON (sales.id = things.id);
+
+Hive可以把较小的表放入每个Mapper的内存来执行连接操作
+ SELECT /*+ MAPJOIN(things) */ sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+ FROM records2
+    > INSERT OVERWRITE TABLE stations_by_year SELECT year, COUNT(DISTINCT station) GROUP BY year
+    > INSERT OVERWRITE TABLE records_by_year SELECT year, COUNT(1) GROUP BY year
+    > INSERT OVERWRITE TABLE good_records_by_year SELECT year, COUNT(1) WHERE temperature != 9999 AND (quality = 0 OR quality = 1 OR quality = 4 OR quality = 5 OR quality = 9) GROUP BY year;
+
+
+    CREATE TABLE target AS SELECT col1,col2 FROM source;
+
+    CREATE VIEW valid_records AS SELECT * FROM records2 WHERE temperature !=9999;
+
+     DESCRIBE EXTENDED valid_records;

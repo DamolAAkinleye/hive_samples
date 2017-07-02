@@ -1,0 +1,10 @@
+String filepath = "/home/hadoop/test/hive.txt";
+sql = "load data local inpath '" + filepath + "' into table webuser " ;
+stmt.execute(sql);
+sql = "select * from weblogin where webuser_id=1";
+System.out.println("Running: " + sql);
+res = stmt.executeQuery(sql);
+while (res.next()) {
+System.out.println("Id: "+res.getInt(1)+ "\twebuserId: " + res.getString(2));
+}
+

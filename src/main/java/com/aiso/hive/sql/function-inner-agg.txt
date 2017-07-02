@@ -1,0 +1,66 @@
+一、基本聚合函数
+
+数据聚合是按照特定条件将数据整合并表达出来，以总结出更多的组信息。
+
+Hive包含内建的一些基本聚合函数，如MAX, MIN, AVG等等，同时也通过GROUPING SETS, ROLLUP, CUBE等函数支持更高级的聚合。
+
+Hive基本内建聚合函数通常与GROUP BY连用，默认情况下是对整个表进行操作。在使用GROUP BY时，除聚合函数外其他已选择列必须包含在GROUP BY子句中。
+
+例：计算employee表中数据总条数 hive> SELECT COUNT(*) FROM employee;
+
+例：计算employee表中数据总条数，sex_age必须包含在GROUP BY的子句中，否则报错！ hive> SELECT sex_age, count(*) AS row_cnt FROM employee GROUP BY sex_age;
+
+那么有一个问题，如果我需要选择一行，但此时我不想对其进行GROUP BY那应该怎么办呢？这里有两个方法，一个是后面要讲到的使用分析函数，另一个就是使用COLLECT_SET函数，该函数将返回一个包含被GROUP BY排除的列的副本集合。
+
+例：使用COLLECT_SET，其中的列不用进行GROUP BY hive> SELECT sex_age, count(*) AS row_cnt FROM employee GROUP BY sex_age;
+
+注：聚合函数在同一个语句中可以组合使用，但是不能嵌套使用，即不能在一个聚合函数中套用另一个聚合函数！
+
+例：组合使用AVG和COUNT hive> SELECT sex_age.sex, AVG(sex_age.age) AS avg_age, count(*) AS row_cnt FROM employee GROUP BY sex_age.sex;
+
+例：聚合函数与CASE WHEN组合使用 hive> SELECT SUM(CASE WHEN sex_age.sex='Male' THEN sex_age.age ELSE 0 END)/COUNT(CASE WHEN sex_age.sex='Male' THEN 1 ELSE NULL END) AS male_age_avg FROM employee;
+
+例：聚合函数与COALESCE和IF组合使用。COALESCE(arg1, arg2, arg3...)：遇到非null参数即返回改值 hive> SELECT SUM(COALESCE(sex_age.age, 0)) AS age_sum, SUM(IF(sex_age.sex='Female',sex_age.age,0)) AS female_age_sum FROM employee;
+
+例：嵌套聚合函数将会报错 hive> SELECT AVG(COUNT(*)) AS row_cnt FROM employee;
+
+例：聚合函数与DISTINCT关键词组合使用。DISTINCT: 去重 hive> SELECT COUNT(DISTINCT sex_age.sex) AS sex_uni_cnt, COUNT(DISTINCT name) AS name_uni_cnt FROM employee;  注：如果COUNT和DISTINCT连用，Hive将忽略对reducer个数的设置（如：set mapred.reduce.tasks=20;）, 仅会有一个reducer！此时reduce将成为瓶颈，这时我们可以使用子查询的方式解决该问题。
+----------------- 对比 ----------------------
+
+例：瓶颈问题 hive> SELECT COUNT(DISTINCT sex_age.sex) AS sex_uni_cnt FROM employee;
+
+例：子查询解决COUNT, DISTINCT瓶颈 hive> SELECT COUNT(*) AS sex_uni_cnt FROM (SELECT DISTINCT sex_age.sex FROM employee) a;  注：子句必须有一个别名，否则会解析语句失败。
+在Hive的聚合中，如果某个聚合列的值中有null，则包含该null的行将在聚合时被忽略。为了避免这种情况，可以使用COALESCE来将null替换为一个默认值。 例： hive> CREATE TABLE t AS SELECT * FROM (SELECT employee_id-99 AS val1, (employee_id-98) AS val2 FROM employee_hr WHERE employee_id<=101 UNION ALL SELECT null val1, 2 AS val2 FROM employee_hr WHERE employee_id=100) a;
+
+例： hive> SELECT * FROM t;
+
+例：val1=null将被忽略，但该行对应的其他非null值继续被聚合！ hive> SELECT SUM(val1), SUM(val1 + val2) FROM t;
+
+例：将值为null的使用COALESCE替换为0 hive> SELECT SUM(COALESCE(val1, 0)), SUM(COALESCE(val1, 0)+val2) FROM t;
+可以设置hive.map.aggr属性来控制map阶段的聚合，默认是false。如果设置为true，则将在map任务时进行first-level聚合，这将使得map有更好的性能，但会消耗更多内存。
+
+
+二、高级聚合 高级聚合主要有以下几种情况：
+
+1. GROUPING SETS 该关键字可以实现对同一个数据集的多重GROUP BY操作。
+事实上GROUPING SETS是多个GROUP BY进行UNION ALL操作的简单表达，它仅使用一个stage完成这些操作。
+
+
+GROUPING SETS的子句中如果包换()数据集，则表示整体聚合。
+
+例： hive> SELECT name, work_place[0] AS main_place, count(employee_id) AS emp_id_cnt FROM employee_id GROUP BY name, work_place[0] GROUPING SETS((name, work_place[0]), name, work_place[0], ()); || SELECT name, work_place[0] AS main_place, count(employee_id) AS emp_id_cnt FROM employee_id GROUP BY name, work_place[0] UNION ALL SELECT name, NULL AS main_place, count(employee_id) AS emp_id_cnt FROM employee_id GROUP BY name UNION ALL SELECT NULL AS name, work_place[0] AS main_place, count(employee_id) AS emp_id_cnt FROM employee_id GROUP BY work_place[0] UNION ALL SELECT NULL AS name, NULL AS main_place, count(employee_id) AS emp_id_cnt FROM employee_id;
+
+
+然而GROUPING SETS目前还有未解决的问题，参考HIVE-6950https://issues.apache.org/jira/browse/HIVE-6950 例： hive> SELECT sex_age.sex, sex_age.age, count(name) AS name_cnt FROM employee GROUP BY sex_age.sex, sex_age.age GROUPING SETS((sex_age.sex, sex_age.age));
+
+2. ROLLUP和CUBE 这两个关键字都是GROUP BY的高级实现。
+对比于规定了n层聚合的GROUPING SETS，ROLLUP会创建n+1层聚合，在此n表示分组列的个数。 GROUP BY a, b, c WITH ROLLUP 等价于 GROUP BY a,b,c GROUPING SETS ((a,b,c),(a,b),(a),())
+CUBE将会对分组列进行所有可能的组合聚合。如果为CUBE指定了n列，则将返回2^n个聚合组合。 GROUP BY a, b, c WITH ROLLUP 等价于 GROUP BY a,b,c GROUPING SETS ((a,b,c),(a,b),(b,c),(a,c),(a),(b),(c),())
+
+
+
+三、聚合条件--HAVING 从Hive0.7.0开始HAVING被添加到Hive作为GROUP BY结果集的条件过滤。HAVING可以作为子句的替代。
+
+例： hive> SELECT sex_age.age FROM employee GROUP BY sex_age.age HAVING count(*)<=1;
+
+例：作用同上 hive> SELECT a.age FROM (SELECT COUNT(*) AS cnt, sex_age.age FROM employee GROUP BY sex_age.age) a WHERE a.cnt<=1;

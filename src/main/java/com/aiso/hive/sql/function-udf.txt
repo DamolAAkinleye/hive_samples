@@ -1,0 +1,3 @@
+UDF map阶段
+UDAF  reduce阶段
+

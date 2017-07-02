@@ -1,0 +1,278 @@
+CREATE TABLE invites (foo INT, bar STRING) PARTITIONED BY (ds STRING);
+
+SHOW [FORMATTED] (INDEX|INDEXES) ON table_with_index [(FROM|IN) db_name];
+
+
+-- Create/build, show, and drop index:
+CREATE INDEX table01_index ON TABLE table01 (column2) AS 'COMPACT';
+SHOW INDEX ON table01;
+DROP INDEX table01_index ON table01;
+
+-- Create then build, show formatted (with column names), and drop index:
+CREATE INDEX table02_index ON TABLE table02 (column3) AS 'COMPACT' WITH DEFERRED REBUILD;
+ALTER INDEX table02_index ON table2 REBUILD;
+SHOW FORMATTED INDEX ON table02;
+DROP INDEX table02_index ON table02;
+
+
+-- Create bitmap index, build, show, and drop:
+CREATE INDEX table03_index ON TABLE table03 (column4) AS 'BITMAP' WITH DEFERRED REBUILD;
+ALTER INDEX table03_index ON table03 REBUILD;
+SHOW FORMATTED INDEX ON table03;
+
+DROP INDEX table03_index ON table03;
+Create index in a new table:
+CREATE INDEX table04_index ON TABLE table04 (column5) AS 'COMPACT' WITH DEFERRED REBUILD IN TABLE table04_index_table;
+
+-- Create index stored as RCFile:
+CREATE INDEX table05_index ON TABLE table05 (column6) AS 'COMPACT' STORED AS RCFILE;
+Create index stored as text file:
+CREATE INDEX table06_index ON TABLE table06 (column7) AS 'COMPACT' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE;
+
+-- Create index with index properties:
+CREATE INDEX table07_index ON TABLE table07 (column8) AS 'COMPACT' IDXPROPERTIES ("prop1"="value1", "prop2"="value2");
+
+
+-- Create index with table properties:
+CREATE INDEX table08_index ON TABLE table08 (column9) AS 'COMPACT' TBLPROPERTIES ("prop3"="value3", "prop4"="value4");
+Drop index if exists:
+DROP INDEX IF EXISTS table09_index ON table09;
+
+-- Rebuild index on a partition:
+ALTER INDEX table10_index ON table10 PARTITION (columnX='valueQ', columnY='valueR') REBUILD;
+
+
+
+
+
+
+
+
+
+DROP INDEX [IF EXISTS] index_name ON table_name;
+DROP INDEX index_name ON table_name
+
+
+
+CREATE INDEX index_name
+  ON TABLE base_table_name (col_name, ...)
+  AS index_type
+  [WITH DEFERRED REBUILD]
+  [IDXPROPERTIES (property_name=property_value, ...)]
+  [IN TABLE index_table_name]
+  [
+     [ ROW FORMAT ...] STORED AS ...
+     | STORED BY ...
+  ]
+  [LOCATION hdfs_path]
+  [TBLPROPERTIES (...)]
+  [COMMENT "index comment"];
+
+
+
+ CREATE INDEX index_name
+ON TABLE base_table_name (col_name, ...)
+AS 'index.handler.class.name'
+[WITH DEFERRED REBUILD]
+[IDXPROPERTIES (property_name=property_value, ...)]
+[IN TABLE index_table_name]
+[PARTITIONED BY (col_name, ...)]
+[
+   [ ROW FORMAT ...] STORED AS ...
+   | STORED BY ...
+]
+[LOCATION hdfs_path]
+[TBLPROPERTIES (...)]
+[COMMENT "index comment"]
+
+  CREATE TABLE t(i int, j int);
+CREATE INDEX x ON TABLE t(j)
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler';
+
+
+
+
+CREATE INDEX x ON TABLE t(j)
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler'
+IN TABLE t_x;
+
+
+DROP TABLE IF EXISTS {{IDXS}};
+CREATE TABLE {{IDXS}} (
+  {{INDEX_ID}} bigint(20) NOT NULL,
+  {{CREATE_TIME}} int(11) NOT NULL,
+  {{DEFERRED_REBUILD}} bit(1) NOT NULL,
+  {{INDEX_HANDLER_CLASS}} varchar(256) DEFAULT NULL,
+  {{INDEX_NAME}} varchar(128) DEFAULT NULL,
+  {{INDEX_TBL_ID}} bigint(20) DEFAULT NULL,
+  {{LAST_ACCESS_TIME}} int(11) NOT NULL,
+  {{ORIG_TBL_ID}} bigint(20) DEFAULT NULL,
+  {{SD_ID}} bigint(20) DEFAULT NULL,
+  PRIMARY KEY ({{INDEX_ID}}),
+  UNIQUE KEY {{UNIQUEINDEX}} ({{INDEX_NAME}},{{ORIG_TBL_ID}}),
+  KEY {{IDXS_FK1}} ({{SD_ID}}),
+  KEY {{IDXS_FK2}} ({{INDEX_TBL_ID}}),
+  KEY {{IDXS_FK3}} ({{ORIG_TBL_ID}}),
+  CONSTRAINT {{IDXS_FK3}} FOREIGN KEY ({{ORIG_TBL_ID}}) REFERENCES {{TBLS}} ({{TBL_ID}}),
+  CONSTRAINT {{IDXS_FK1}} FOREIGN KEY ({{SD_ID}}) REFERENCES {{SDS}} ({{SD_ID}}),
+  CONSTRAINT {{IDXS_FK2}} FOREIGN KEY ({{INDEX_TBL_ID}}) REFERENCES {{TBLS}} ({{TBL_ID}})
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table {{INDEX_PARAMS}}
+--
+
+DROP TABLE IF EXISTS {{INDEX_PARAMS}};
+CREATE TABLE {{INDEX_PARAMS}} (
+  {{INDEX_ID}} bigint(20) NOT NULL,
+  {{PARAM_KEY}} varchar(256) NOT NULL,
+  {{PARAM_VALUE}} varchar(767) DEFAULT NULL,
+  PRIMARY KEY ({{INDEX_ID}},{{PARAM_KEY}}),
+  CONSTRAINT {{INDEX_PARAMS_FK1}} FOREIGN KEY ({{INDEX_ID}}) REFERENCES {{IDXS}} ({{INDEX_ID}})
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER INDEX index_name ON table_name [PARTITION partition_spec] REBUILD;
+
+ALTER INDEX index_name ON table_name [PARTITION (...)] REBUILD
+
+
+ADD JAR /path/to/hive_idx-compact.jar;
+CREATE INDEX ...
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler';
+
+
+
+--重建
+Hive的索引目的是提高Hive表指定列的查询速度。
+没有索引时，类似&#39;WHERE tab1.col1 = 10&#39; 的查询，Hive会加载整张表或分区，然后处理所有的rows，但是如果在字段col1上面存在索引时，那么只会加载和处理文件的一部分。
+
+与其他传统数据库一样，增加索引在提升查询速度时，会消耗额外资源去创建索引和需要更多的磁盘空间存储索引。
+Hive 0.7.0版本中，加入了索引。
+Hive 0.8.0版本中增加了bitmap索引。
+
+2、 索引相关的配置参数
+hive.index.compact.file.ignore.hdfs
+
+Default Value: false
+Added In: Hive 0.7.0 withHIVE-1889
+在索引文件中存储的hdfs地址将在运行时被忽略，如果开启的话；如果数据被迁移，那么索引文件依然可用，默认是false
+hive.optimize.index.filter
+Default Value: false
+Added In: Hive 0.8.0 withHIVE-1644
+是否自动使用索引, 默认是false
+hive.optimize.index.filter.compact.minsize
+Default Value: 5368709120
+Added In: Hive 0.8.0 withHIVE-1644
+压缩索引自动应用的最小输入大小
+hive.optimize.index.filter.compact.maxsize
+Default Value: -1
+Added In: Hive 0.8.0 withHIVE-1644
+压缩索引自动应用的最大输入大小,负值代表正无穷
+hive.index.compact.query.max.size
+Default Value: 10737418240
+Added In: Hive 0.8.0 withHIVE-2096
+一个使用压缩索引做的查询能取到的最大数据量，默认是10737418240 个byte；负值代表无穷大；
+hive.index.compact.query.max.entries
+Default Value: 10000000
+Added In: Hive 0.8.0 withHIVE-2096
+使用压缩索引查询时能读到的最大索引项数，默认是10000000；负值代表无穷大；
+hive.exec.concatenate.check.index
+Default Value: true
+Added In: Hive 0.8.0 withHIVE-2125
+如果设置为true，那么在做ALTER TABLE tbl_name CONCATENATE on a table/partition（有索引） 操作时，抛出错误；可以帮助用户避免index的删除和重建；
+hive.optimize.index.groupby
+Default Value: false
+Added In: Hive 0.8.1 withHIVE-1694
+hive.index.compact.binary.search
+Default Value: true
+Added In: Hive 0.8.1with HIVE-2535
+在索引表中是否开启二分搜索进行索引项查询，默认是true；
+3、 索引示例
+注意：在Hive 0.12.0以及之前版本中，索引名称在create index和drop index语句中是大小写敏感的。然而，alter index 需要一个小写的索引名字。
+此bug在Hive 0.13.0解决，此版本开始使索引名字大小写不敏感。
+对于Hive 0.13.0之前的版本，最好使用小写的索引名字。
+下面介绍索引的常见用法：
+A、 Create/build，show和drop index
+create index table01_index ontable table01(column2) as &#39;COMPACT&#39; with deferred rebuild;
+show index on table01;
+drop index table01_index ontable01;
+B、 Create then build，show formatted和drop index
+create index table02_index ontable table02(column3) as &#39;compact&#39; with deferred rebuild;
+alter index table02_index ontable02 rebuild;
+show formatted index ontable02;
+drop index table02_index ontable02;
+C、 创建bitmap索引，build,show 和drop
+createindex table03_index on table table03 (column4) as &#39;bitmap&#39; with deferred rebuild;
+alter index table03_index ontable03 rebuild;
+show formatted index ontable03;
+drop index table03_index on table03;
+D、 在一张新表上创建索引
+createindex table04_index on table table04 (column5) as &#39;compact&#39;with deferred rebuild in tabletable04_index_table;
+E、 创建索引，存储格式为RCFile
+create index table05_index ontable table05 (column6) as &#39;compact&#39; with deferred rebuildstored as rcfile;
+F、 创建索引，存储格式为TextFile
+create index table06_index ontable table06 (column7) as &#39;compact&#39; with deferredrebuild row format delimited fields terminated by &#39;\t&#39; stored as textfile;
+G、 创建带有索引属性的索引
+create index table07_index ontable table07 (column8) as &#39;compact&#39; with deferred rebuild idxproperties("prop1"="value1", "prop2"="value2");
+H、 创建带有表属性的索引
+create index table08_index ontable table08 (column9) as &#39;compact&#39; withdeferred rebuild tblproperties("prop3"="value3", "prop4"="value4");
+I、 如果索引存在，则删除
+drop index if exists table09_indexon table09;
+J、 在分区上重建索引
+alter index table10_index on table10partition (columnx=&#39;valueq&#39;, columny=&#39;valuer&#39;) rebuild;
+4、 索引测试
+(1) 查询表中行数
+hive (hive)> select count(1)from userbook;
+4409365
+(2) 表中未创建索引前查询
+hive (hive)> select * fromuserbook where book_id = &#39;15999998838&#39;;
+Query ID =hadoop_20150627165551_595da79a-0e27-453b-9142-7734912934c4
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks is setto 0 since there&#39;s no reduce operator
+Starting Job =job_1435392961740_0012, Tracking URL =http://gpmaster:8088/proxy/application_1435392961740_0012/
+Kill Command =/home/hadoop/hadoop-2.6.0/bin/hadoop job -kill job_1435392961740_0012
+Hadoop job information forStage-1: number of mappers: 2; number of reducers: 0
+2015-06-27 16:56:04,666 Stage-1map = 0%, reduce = 0%
+2015-06-27 16:56:28,974 Stage-1map = 50%, reduce = 0%, Cumulative CPU4.36 sec
+2015-06-27 16:56:31,123 Stage-1map = 78%, reduce = 0%, Cumulative CPU6.21 sec
+2015-06-27 16:56:34,698 Stage-1map = 100%, reduce = 0%, Cumulative CPU7.37 sec
+MapReduce Total cumulative CPUtime: 7 seconds 370 msec
+Ended Job =job_1435392961740_0012
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 2 Cumulative CPU: 7.37 sec HDFS Read: 348355875 HDFS Write: 76 SUCCESS
+Total MapReduce CPU Time Spent:7 seconds 370 msec
+OK
+userbook.book_id userbook.book_name userbook.author userbook.public_date userbook.address
+15999998838 uviWfFJ KwCrDOA 2009-12-27 3b74416d-eb69-48e2-9d0d-09275064691b
+Time taken: 45.678 seconds, Fetched: 1 row(s)
+(3) 创建索引
+hive (hive)> create indexuserbook_bookid_idx on table userbook(book_id) as &#39;COMPACT&#39; WITH DEFERREDREBUILD;
+(4) 创建索引后再执行查询
+hive (hive)> select * fromuserbook where book_id = &#39;15999998838&#39;;
+Query ID =hadoop_20150627170019_5bb5514a-4c8e-4c47-9347-ed0657e1f2ff
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks is setto 0 since there&#39;s no reduce operator
+Starting Job =job_1435392961740_0013, Tracking URL = http://gpmaster:8088/proxy/application_1435392961740_0013/
+Kill Command =/home/hadoop/hadoop-2.6.0/bin/hadoop job -kill job_1435392961740_0013
+Hadoop job information forStage-1: number of mappers: 2; number of reducers: 0
+2015-06-27 17:00:30,429 Stage-1map = 0%, reduce = 0%
+2015-06-27 17:00:54,003 Stage-1map = 50%, reduce = 0%, Cumulative CPU7.43 sec
+2015-06-27 17:00:56,181 Stage-1map = 78%, reduce = 0%, Cumulative CPU9.66 sec
+2015-06-27 17:00:58,417 Stage-1map = 100%, reduce = 0%, Cumulative CPU10.83 sec
+MapReduce Total cumulative CPUtime: 10 seconds 830 msec
+Ended Job =job_1435392961740_0013
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 2 Cumulative CPU: 10.83 sec HDFS Read: 348356271 HDFS Write: 76 SUCCESS
+Total MapReduce CPU Time Spent:10 seconds 830 msec
+OK
+userbook.book_id userbook.book_name userbook.author userbook.public_date userbook.address
+15999998838 uviWfFJ KwCrDOA 2009-12-27 3b74416d-eb69-48e2-9d0d-09275064691b
+Time taken: 40.549 seconds, Fetched: 1 row(s)
+可以看到创建索引后，速度还是稍快一点的。
+其实对于这种简单的查询，通过我们的设置，可以不用启动Map/Reduce的，而是启动Fetch task，直接从HDFS文件中filter过滤出需要的数据，需要设置如下参数：
+set hive.fetch.task.conversion=more;
+hive (hive)> select * fromuserbook where book_id = &#39;15999998838&#39;;
+userbook.book_id userbook.book_name userbook.author userbook.public_date userbook.address
+15999998838 uviWfFJ KwCrDOA 2009-12-27 3b74416d-eb69-48e2-9d0d-09275064691b

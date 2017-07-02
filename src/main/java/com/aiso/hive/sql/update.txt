@@ -1,0 +1,6 @@
+引用的列必须是将要更新表的一列。
+赋值必须是Hive在select中支持的表达式。因此，数学操作，UDFs，转换，字面值等是支持的。子查询是不支持的。
+只有匹配where的行才会被更新。
+分区列不能被更新。
+桶（bucket)列不能被更新。
+UPDATE tablename SET column = value [, column = value ...] [WHERE expression]

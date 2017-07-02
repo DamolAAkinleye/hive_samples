@@ -1,0 +1,77 @@
+EXPORT TABLE tablename [PARTITION (part_column="value"[, ...])]
+  TO 'export_target_path' [ FOR replication('eventid') ]
+
+
+IMPORT [[EXTERNAL] TABLE new_or_original_tablename [PARTITION (part_column="value"[, ...])]]
+FROM 'source_path'
+[LOCATION 'import_target_path']
+
+
+--table-->hdfs File
+export table department to 'hdfs_exports_location/department';
+export table employee partition (emp_country="in", emp_state="ka") to 'hdfs_exports_location/employee';
+export table employee to 'hdfs_exports_location/employee';
+
+
+
+  -- Hive中导出数据主要分为两大类，分别是导出数据到linux系统和导出数据到hdfs文件系统上。另外也可以认为导出数据到其他hive表也算导出数据(不过该方式也是导入数据)。命令如下：
+
+
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 [row format row_format] [stored as file_format] SELECT ... FROM ...
+-- 注意：hive导出数据支持一次导出到多个文件夹中，同多表同时导入数据一样。
+
+
+EXPORT TABLE tablename [PARTITION (part_column="value"[, ...])]
+  TO 'export_target_path' [ FOR replication('eventid') ]
+
+export table emp to '/export/' ;
+
+insert overwrite [local] director select ...
+
+ insert  overwrite  local directory '/home/beifeng/emp/'
+		row format delimited fields terminated by "\t"
+		select * from emp ;
+-- * local 	表示导出文件到本地目录
+-- * 不加local 表示导出到HDFS上面
+
+
+-- hadoop shell
+
+
+
+
+--Table-->file
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
+  SELECT ... FROM ...
+
+
+
+-- Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+row_format
+  : DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+        [NULL DEFINED AS char] (Note: Only available starting with Hive 0.13)
+
+--table-->hdfs File
+EXPORT TABLE tablename [PARTITION (part_column="value"[, ...])]
+  TO 'export_target_path' [ FOR replication('eventid') ]
+export table department to 'hdfs_exports_location/department';
+export table employee partition (emp_country="in", emp_state="ka") to 'hdfs_exports_location/employee';
+export table employee to 'hdfs_exports_location/employee';
+
+
+
+
+
+
+
+
+
+
+
+
+

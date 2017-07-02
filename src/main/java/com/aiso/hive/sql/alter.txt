@@ -1,0 +1,335 @@
+ALTER (DATABASE|SCHEMA) database_name SET DBPROPERTIES (property_name=property_value, ...);   -- (Note: SCHEMA added in Hive 0.14.0)
+
+ALTER (DATABASE|SCHEMA) database_name SET OWNER [USER|ROLE] user_or_role;   -- (Note: Hive 0.13.0 and later; SCHEMA added in Hive 0.14.0)
+
+
+
+ALTER TABLE table_name ADD [IF NOT EXISTS] partition_spec [ LOCATION 'location1' ] partition_spec [ LOCATION 'location2' ] ...
+partition_spec:
+  : PARTITION (partition_col = partition_col_value, partition_col = partiton_col_value, ...)
+
+
+
+ALTER TABLE table_name ADD [IF NOT EXISTS] partition_spec [ LOCATION 'location1' ] partition_spec [ LOCATION 'location2' ] ...
+
+      partition_spec:
+
+  : PARTITION (partition_col = partition_col_value, partition_col = partiton_col_value, ...)
+
+
+  　ALTER TABLE table_name DROP partition_spec, partition_spec,...
+
+
+
+ALTER TABLE c02_clickstat_fatdt1 ADD
+PARTITION (dt='20131202') location '/user/hive/warehouse/c02_clickstat_fatdt1/part20131202'
+PARTITION (dt='20131203') location '/user/hive/warehouse/c02_clickstat_fatdt1/part20131203';
+
+
+ALTER TABLE table_name DROP partition_spec, partition_spec,...
+ALTER TABLE c02_clickstat_fatdt1 DROP PARTITION (dt='20101202');
+
+
+ALTER TABLE table_name RENAME TO new_table_name
+
+
+//这个命令可以让用户为表更名。数据所在的位置和分区名并不改变。换而言之，老的表名并未“释放”，对老表的更改会改变新表的数据。
+
+
+
+
+
+
+2.2.4修改列/属性
+
+ALTER TABLE table_name CHANGE [COLUMN] col_old_name col_new_name column_type [COMMENT col_comment] [FIRST|AFTER column_name]
+这个命令可以允许改变列名、数据类型、注释、列位置或者它们的任意组合。
+
+2.2.5添加/替换列
+
+ALTER TABLE table_name ADD|REPLACE COLUMNS (col_name data_type [COMMENT col_comment], ...)
+ADD是代表新增一字段，字段位置在所有列后面(partition列前);REPLACE则是表示替换表中所有字段。
+
+例子：
+
+ desc xi;
+OK
+id      int
+cont    string
+dw_ins_date     string
+Time taken: 0.061 seconds
+ create table xibak like xi;
+OK
+Time taken: 0.157 seconds
+ alter table xibak replace columns (ins_date string);
+OK
+Time taken: 0.109 seconds
+ desc xibak;
+OK
+ins_date        string
+2.3创建视图
+
+CREATE VIEW [IF NOT EXISTS] view_name [ (column_name [COMMENT column_comment], ...) ]
+[COMMENT view_comment]
+[TBLPROPERTIES (property_name = property_value, ...)]
+AS SELECT ...
+注：视图关键字。 视图是只读的，不能用LOAD/INSERT/ALTER
+
+2.4显示表
+
+查看表名：
+
+SHOW TABLES;
+查看表名，部分匹配：
+
+SHOW TABLES 'page.*';
+SHOW TABLES '.*view';
+查看某表的所有Partition，如果没有就报错：
+
+SHOW PARTITIONS page_view;
+查看某表结构：
+
+DESCRIBE invites;
+查看分区内容：
+
+SELECT a.foo FROM invites a WHERE a.ds='2012-08-15';
+查看有限行内容，同Greenplum，用limit关键词：
+
+SELECT a.foo FROM invites a limit 3;
+查看表分区定义：
+
+DESCRIBE EXTENDED page_view PARTITION (ds='2013-08-08');
+2.5加载
+
+HIVE装载数据没有做任何转换加载到表中的数据只是进入相应的配置单元表的位置移动数据文件。纯加载操作复制/移动操作。
+
+2.5.1语法
+
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+Load 操作只是单纯的复制/移动操作，将数据文件移动到 Hive 表对应的位置。
+
+如：从本地导入数据到表格并追加原表
+
+LOAD DATA LOCAL INPATH `/tmp/pv_2013-06-08_us.txt` INTO TABLE c02 PARTITION(date='2013-06-08', country='US')
+从本地导入数据到表格并追加记录：
+
+LOAD DATA LOCAL INPATH './examples/files/kv1.txt' INTO TABLE pokes;
+从hdfs导入数据到表格并覆盖原表：
+
+LOAD DATA INPATH '/user/admin/SqlldrDat/CnClickstat/20131101/18/clickstat_gp_fatdt0/0' INTO table c02_clickstat_fatdt1 OVERWRITE PARTITION (dt='20131201');
+关于来源的文本数据的字段间隔符 如果要将自定义间隔符的文件读入一个表，需要通过创建表的语句来指明输入文件间隔符，然后load data到这个表就ok了。
+
+2.6插入
+
+2.6.1INSERT语法
+
+Standard syntax:
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1 FROM from_statement
+
+Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] select_statement1
+[INSERT OVERWRITE TABLE tablename2 [PARTITION ...] select_statement2] ...
+
+Hive extension (dynamic partition inserts):
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) select_statement FROM from_statement
+Insert时，from子句既可以放在select子句后，也可以放在insert子句前，下面两句是等价的
+
+ FROM invites a INSERT OVERWRITE TABLE events SELECT a.bar, count(*) WHERE a.foo > 0 GROUP BY a.bar;
+ INSERT OVERWRITE TABLE events SELECT a.bar, count(*) FROM invites a WHERE a.foo > 0 GROUP BY a.bar;
+需要注意的是，hive没有直接插入一条数据的sql，不过可以通过其他方法实现： 假设有一张表B至少有一条数据，我们想向表A（int，string）中插入一条数据，可以用下面的方法实现：
+
+from B insert table A select 1，‘abc’ limit 1；
+我觉得Hive好像不能够插入一个记录，因为每次你写INSERT语句的时候都是要将整个表的值OVERWRITE。我想这个应该是与Hive的storage layer是有关系的，因为它的存储层是HDFS，插入一个数据要全表扫描，还不如用整个表的替换来的快些。
+
+注：Hive不支持一条一条的用insert语句进行插入操作，也不支持update的操作。数据是以load的方式，加载到建立好的表中。数据一旦导入，则不可修改。要么drop掉整个表，要么建立新的表，导入新的数据。
+
+2.6.1WRITE语法
+
+Standard syntax:
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 SELECT ... FROM ...
+
+Hive extension (multiple inserts):
+FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+导出文件到本地：
+
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/local_out' SELECT a.* FROM pokes a;
+导出文件到HDFS：
+
+INSERT OVERWRITE DIRECTORY '/user/admin/SqlldrDat/CnClickstat/20131101/19/clickstat_gp_fatdt0/0' SELECT a.* FROM c02_clickstat_fatdt1 a WHERE dt=’20131201’;
+一个源可以同时插入到多个目标表或目标文件，多目标insert可以用一句话来完成：
+
+FROM src
+  INSERT OVERWRITE TABLE dest1 SELECT src.* WHERE src.key < 100
+  INSERT OVERWRITE TABLE dest2 SELECT src.key, src.value WHERE src.key >= 100 and src.key < 200
+  INSERT OVERWRITE TABLE dest3 PARTITION(ds='2013-04-08', hr='12') SELECT src.key WHERE src.key >= 200 and src.key < 300
+  INSERT OVERWRITE LOCAL DIRECTORY '/tmp/dest4.out' SELECT src.value WHERE src.key >= 300;
+例子：
+
+from tbl1
+insert overwrite  table test2 select  '1,2,3' limit 1
+insert overwrite  table d select  '4,5,6' limit 1;
+2.8删除
+
+删除一个内部表的同时会同时删除表的元数据和数据。删除一个外部表，只删除元数据而保留数据。
+
+语法：
+
+DROP TABLE tbl_name
+2.9Limit/Top/REGEX
+
+Limit 可以限制查询的记录数。查询的结果是随机选择的。下面的查询语句从 t1 表中随机查询5条记录：
+
+SELECT * FROM t1 LIMIT 5
+下面的查询语句查询销售记录最大的 5 个销售代表。
+
+SET mapred.reduce.tasks = 1
+  SELECT * FROM sales SORT BY amount DESC LIMIT 5
+SELECT 语句可以使用正则表达式做列选择，下面的语句查询除了 ds 和 hr 之外的所有列：
+
+SELECT `(ds|hr)?+.+` FROM sales
+2.10查询
+
+2.10.1语法
+
+SELECT [ALL | DISTINCT] select_expr, select_expr, ...
+FROM table_reference
+[WHERE where_condition]
+[GROUP BY col_list]
+[   CLUSTER BY col_list
+  | [DISTRIBUTE BY col_list] [SORT BY col_list]
+]
+[LIMIT number]
+2.10.2GROUP BY
+
+groupByClause: GROUP BY groupByExpression (, groupByExpression)*
+
+groupByExpression: expression
+
+groupByQuery: SELECT expression (, expression)* FROM src groupByClause?
+2.10.3Order/Sort By
+
+Order by 语法：
+
+colOrder: ( ASC | DESC )
+orderBy: ORDER BY colName colOrder? (',' colName colOrder?)*
+query: SELECT expression (',' expression)* FROM src orderBy
+Sort By 语法： Sort顺序将根据列类型而定。如果数字类型的列，则排序顺序也以数字顺序。如果字符串类型的列，则排序顺序将字典顺序。
+
+colOrder: ( ASC | DESC )
+sortBy: SORT BY colName colOrder? (',' colName colOrder?)*
+query: SELECT expression (',' expression)* FROM src sortBy
+2.11Hive Join
+
+
+join_table:
+    table_reference JOIN table_factor [join_condition]
+  | table_reference {LEFT|RIGHT|FULL} [OUTER] JOIN table_reference join_condition
+  | table_reference LEFT SEMI JOIN table_reference join_condition
+
+table_reference:
+    table_factor
+  | join_table
+
+table_factor:
+    tbl_name [alias]
+  | table_subquery alias
+  | ( table_references )
+
+join_condition:
+    ON equality_expression ( AND equality_expression )*
+
+equality_expression:
+    expression = expression
+Hive 只支持等值连接（equality joins）、外连接（outer joins）和（left/right joins）。Hive 不支持所有非等值的连接，因为非等值连接非常难转化到 map/reduce 任务。另外，Hive 支持多于 2 个表的连接。
+
+2.11.2注意事项
+
+只支持等值join。
+例如：
+
+  SELECT a.* FROM a JOIN b ON (a.id = b.id)
+  SELECT a.* FROM a JOIN b
+    ON (a.id = b.id AND a.department = b.department)
+是正确的，然而:
+
+  SELECT a.* FROM a JOIN b ON (a.id  b.id)
+是错误的。
+
+可以join多于2个表。
+例如：
+
+  SELECT a.val, b.val, c.val FROM a JOIN b
+    ON (a.key = b.key1) JOIN c ON (c.key = b.key2)
+如果join中多个表的 join key 是同一个，则 join 会被转化为单个 map/reduce 任务，例如：
+
+  SELECT a.val, b.val, c.val FROM a JOIN b
+    ON (a.key = b.key1) JOIN c
+    ON (c.key = b.key1)
+被转化为单个 map/reduce 任务，因为 join 中只使用了 b.key1 作为 join key。
+
+SELECT a.val, b.val, c.val FROM a JOIN b ON (a.key = b.key1)
+  JOIN c ON (c.key = b.key2)
+而这一 join 被转化为 2 个 map/reduce 任务。因为 b.key1 用于第一次 join 条件，而 b.key2 用于第二次 join。
+
+join 时，每次 map/reduce 任务的逻辑。
+reducer 会缓存 join 序列中除了最后一个表的所有表的记录，再通过最后一个表将结果序列化到文件系统。这一实现有助于在 reduce 端减少内存的使用量。实践中，应该把最大的那个表写在最后（否则会因为缓存浪费大量内存）。例如：
+
+ SELECT a.val, b.val, c.val FROM a
+    JOIN b ON (a.key = b.key1) JOIN c ON (c.key = b.key1)
+所有表都使用同一个 join key（使用 1 次 map/reduce 任务计算）。Reduce 端会缓存 a 表和 b 表的记录，然后每次取得一个 c 表的记录就计算一次 join 结果，类似的还有：
+
+ SELECT a.val, b.val, c.val FROM a
+    JOIN b ON (a.key = b.key1) JOIN c ON (c.key = b.key2)
+这里用了 2 次 map/reduce 任务。第一次缓存 a 表，用 b 表序列化；第二次缓存第一次 map/reduce 任务的结果，然后用 c 表序列化。
+
+2.12UDF
+
+基本函数：
+SHOW FUNCTIONS;
+DESCRIBE FUNCTION <function_name>;
+2.13UDTF
+
+UDTF即Built-in Table-Generating Functions 使用这些UDTF函数有一些限制:
+
+1、SELECT里面不能有其它字段，如：
+
+SELECT pageid, explode(adid_list) AS myCol...
+2、不能嵌套，如：
+
+SELECT explode(explode(adid_list)) AS myCol... ＃ 不支持
+3、不支持GROUP BY / CLUSTER BY / DISTRIBUTE BY / SORT BY ，如：
+
+SELECT explode(adid_list) AS myCol ... GROUP BY myCol
+2.14EXPLODE
+
+
+场景：将数据进行转置，如：
+create table test2(mycol array<int>);
+insert OVERWRITE table test2 select * from (select array(1,2,3) from a union all select array(7,8,9)  from d)c;
+ select * from test2;
+[1,2,3]
+[7,8,9]
+ SELECT explode(myCol) AS myNewCol FROM test2;
+
+
+
+
+    在对表结构进行修改的时候，我们可以增加一个新的分区，在增加新分区的同时，将数据直接load到新的分区当中。
+
+ALTER TABLE table_name ADD
+  partition_spec [ LOCATION 'location1' ]
+  partition_spec [ LOCATION 'location2' ] ...
+
+
+
+
+
+
+
+
+
+
+

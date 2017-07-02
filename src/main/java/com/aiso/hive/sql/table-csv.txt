@@ -1,0 +1,68 @@
+
+testdata.txt:
+"1","alex","dba"
+"2","james","dba"
+
+create table test_serde(c1 string,c2 string, c3 string)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES ('input.regex' = '\"(.*)\",\"(.*)\",\"(.*)\"',
+'output.format.string' = '%1$s\\001%2$s\\001%3$s')
+STORED AS TEXTFILE;
+
+load data local inpath '/home/alex/test/testdata.txt' overwrite into table test_serde;
+
+-- Copying data from file:/home/alex/test/testdata.txt
+
+-- Copying file: file:/home/alex/test/testdata.txt
+
+-- Loading data to table default.test_serde
+
+
+select * from test_serde;
+
+
+create table test_serde(c1 string,c2 string, c3 string)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES ('input.regex' = '\"(.*)\",\"(.*)\",\"(.*)\"',
+'output.format.string' = '%1$s\\001%2$s\\001%3$s')
+STORED AS TEXTFILE
+
+
+
+CREATE TABLE csv1_table(a string, b string)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+        "separatorChar" = ",",
+        "quoteChar"     = "'",
+        "escapeChar"    = "\\"
+     )
+STORED AS TEXTFILE;
+
+load data local inpath '${env:HOME}/a.csv' into table t_csv;
+
+
+hive-0.14.0内置支持CSV Serde，以前的版本需要引入第三方库的jar包（http://https://github.com/ogrodnek/csv-serde）
+
+现在有个文本文件a.csv（从数据库中导出的数据通常都是这种格式），里面的内容如下：
+[hive@vm1 ~]$ more a.csv
+'1','zhangsan','20','beijing,shanghai,shandong',1
+'2','lisi','22','guangdong,hainan',1
+'3','wangwu','23','shandong,jiangsu,xizang',0
+现在需要将它加载到hive中进行处理，步骤如下：
+
+1）引入第三方jar包（0.14之前的版本）
+add jar /xx/yy/zz.jar;
+2）创建表
+create table t_csv(id int, name string, address string, sex tinyint) row format serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde' with serdeproperties("separatorChar"=",","quoteChar"="'","escapeChar"= "\\") stored as textfile;
+separatorChar是字段之间的分隔符
+quoteChar是包括字段的符号，比如单引号、双引号
+escapeChar是不处理的字符
+3）加载数据
+load data local inpath '${env:HOME}/a.csv' into table t_csv;
+4）查询
+select name, address from t_csv;
+
+TSV
+    目前没有专门Tsv Serde的jar包，不过可以使用CSV Serde，设置它的separatorChar='\t'
+
+

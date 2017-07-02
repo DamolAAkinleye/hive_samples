@@ -1,0 +1,6 @@
+SHOW TABLES '.*s';
+show tables;
+show databases;
+show partitions ;
+show functions;
+describe extended table_name dot col_name

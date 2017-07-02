@@ -1,0 +1,58 @@
+CREATE VIEW [IF NOT EXISTS] view_name [ (column_name [COMMENT column_comment], ...) ][COMMENT view_comment][TBLPROPERTIES (property_name = property_value, ...)] AS SELECT
+
+•增加视图
+
+•如果没有提供表名，视图列的名字将由定义的SELECT表达式自动生成
+
+•如果修改基本表的属性，视图中不会体现，无效查询将会失败
+
+•视图是只读的，不能用LOAD/INSERT/ALTER
+
+•DROP VIEW view_name
+
+•删除视图
+
+
+-- view：hive支持视图的使用，单只支持逻辑视图，不支持物理视图。使用语法和table类型，创建语法格式为:
+create view viewname as select_statement.
+
+-- view：hive支持视图的使用，单只支持逻辑视图，不支持物理视图。使用语法和table类型，创建语法格式为:
+create view viewname as select_statement.
+
+
+DROP VIEW onion_referrers;
+
+
+CREATE VIEW [IF NOT EXISTS] [db_name.]view_name [(column_name [COMMENT column_comment], ...) ]
+  [COMMENT view_comment]
+  [TBLPROPERTIES (property_name = property_value, ...)]
+  AS SELECT ...;
+
+
+  CREATE VIEW onion_referrers(url COMMENT 'URL of Referring page')
+  COMMENT 'Referrers to The Onion website'
+  AS
+  SELECT DISTINCT referrer_url
+  FROM page_view
+  WHERE page_url='http://www.theonion.com';
+
+
+
+ALTER VIEW [db_name.]view_name SET TBLPROPERTIES table_properties;
+
+table_properties:
+  : (property_name = property_value, property_name = property_value, ...)
+
+
+  ALTER VIEW [db_name.]view_name AS select_statement;
+
+
+
+    CREATE VIEW V1 AS SELECT key, value from src;
+EXPLAIN DEPENDENCY SELECT * FROM V1;
+
+CREATE VIEW V2 AS SELECT ds, key, value FROM srcpart WHERE ds IS NOT NULL;
+CREATE VIEW V4 AS
+  SELECT src1.key, src2.value as value1, src3.value as value2
+  FROM V1 src1 JOIN V2 src2 on src1.key = src2.key JOIN src src3 ON src2.key = src3.key;
+

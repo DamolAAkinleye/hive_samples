@@ -1,0 +1,56 @@
+ Hive中行列转换
+
+1、演示多列转为单行
+数据文件及内容： student.txt
+xiaoming|english|92.0
+xiaoming|chinese|98.0
+xiaoming|math|89.5
+huahua|chinese|80.0
+huahua|math|89.5
+
+创建表studnet：
+create table student(name string,subject string,score decimal(4,1))
+row format delimited
+fields terminated by '|';
+
+导入数据：
+load data local inpath '/home/hadoop/hivetestdata/student.txt' into table student;
+
+
+列转为行演示：
+hive (hive)> select name,concat_ws(',',collect_set(subject)) from student group by name;
+huahua    chinese,math
+xiaoming english,chinese,math
+
+
+hive (hive)> select name,concat_ws(',',collect_set(concat(subject,'=',score))) from student group by name;
+huahua chinese=80,math=89.5
+xiaoming english=92,chinese=98,math=89.5
+
+
+2、演示单行转为多列
+数据文件及内容：student2.txt
+huahua|chinese=80,math=89.5
+xiaoming|english=92,chinese=98,math=89.5
+
+创建表：
+create table student2(name string,subject_score_list string)
+row format delimited
+fields terminated by '|';
+导入数据：
+load data local inpath '/home/hadoop/hivetestdata/student2.txt' into table student2;
+
+行转为列演示：
+hive (hive)> select * from student2;
+student2.name student2.subject_score_list
+huahua             chinese=80,math=89.5
+xiaoming          english=92,chinese=98,math=89.5
+
+
+hive (hive)> select name, subject_list from student2 stu2 lateral view explode(split(stu2.subject_score_list,','))stu_subj as subject_list; ----别名一定不要忘记
+huahua    chinese=80
+huahua    math=89.5
+xiaoming english=92
+xiaoming chinese=98
+xiaoming math=89.5
+

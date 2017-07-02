@@ -1,0 +1,98 @@
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+LOAD DATA LOCAL INPATH './examples/files/kv1.txt' OVERWRITE INTO TABLE pokes;
+
+LOAD DATA LOCAL INPATH './examples/files/kv2.txt' OVERWRITE INTO TABLE invites PARTITION (ds='2008-08-15');
+
+
+ LOAD DATA INPATH '/user/myname/kv2.txt' OVERWRITE INTO TABLE invites PARTITION (ds='2008-08-15');
+
+ LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+LOAD DATA LOCAL INPATH './examples/files/kv1.txt' OVERWRITE INTO TABLE pokes;
+
+
+LOAD DATA LOCAL INPATH 'ml-data/u.data'
+OVERWRITE INTO TABLE u_data;
+
+
+LOAD DATA INPATH '/user/admin/SqlldrDat/CnClickstat/20131101/19/clickstat_gp_fatdt0/0' OVERWRITE INTO TABLE c02_clickstat_fatdt1
+ PARTITION(dt='20131101');
+
+ load data local inpath '${hiveconf:load_file_parm}'  overwrite into table db_track.track_log partition (date=${hiveconf:date_parm},hour=${hiveconf:hour_parm})
+
+
+
+    Hive不支持一条一条的用insert语句进行插入操作，也不支持update的操作。数据是以load的方式，加载到建立好的表中。数据一旦导入，则不可修改。要么drop掉整个表，要么建立新的表，导入新的数据。
+
+
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+
+    Hive在数据load这块，大方向分为两种方式，load文件或者查询一张表，或者将某张表里的额查询结果插入指定表。
+如果划分更细一点个人归纳总结为4种不同的方式的load：
+
+
+
+1. Load data到指定的表
+
+
+    直接将file，加载到指定的表，其中，表可以是普通表或者分区表。具体sql如下：
+
+
+LOAD DATA LOCAL INPATH '/home/admin/test/test.txt' OVERWRITE INTO TABLE test_1
+LOAD DATA LOCAL INPATH '/home/admin/test/test.txt' OVERWRITE INTO TABLE test_1
+    关键字[OVERWRITE]意思是是覆盖原表里的数据，不写则不会覆盖。
+    关键字[LOCAL]是指你加载文件的来源为本地文件，不写则为hdfs的文件。
+    其中
+     ‘home/admin/test/test.txt’是相对路径
+     ‘/home/admin/test/test.txt’为据对路径
+
+
+
+2. load到指定表的分区
+
+    直接将file，加载到指定表的指定分区。表本身必须是分区表，如果是普通表，导入会成功，但是数据实际不会被导入。具体sql如下：
+
+LOAD DATA LOCAL INPATH '/home/admin/test/test.txt' OVERWRITE INTO TABLE test_1 PARTITION（pt=’xxxx）
+LOAD DATA LOCAL INPATH '/home/admin/test/test.txt' OVERWRITE INTO TABLE test_1 PARTITION（pt=’xxxx）
+
+    load数据，hive支持文件夹的方式，将文件夹内的所有文件，都load到指定表中。Hdfs会将文件系统内的某文件夹路径内的文件，分散到不同的实际物理地址中。这样，在数据量很大的时候，hive支持读取多个文件载入，而不需要限定在唯一的文件中。
+
+
+load data local inpath 'filepath' overwrite into table tablename partition
+(partcol1=val1,partcol2=val2...)
+
+1）加载本地文件到hive表
+load data local inpath '/opt/data/emp.txt' into table default.emp ;
+2）加载hdfs文件到hive中
+load data inpath '/user/beifeng/hive/data/emp.txt' overwrite into table default.emp ;
+3）加载数据覆盖表中已有的数据
+load data inpath '/user/beifeng/hive/data/emp.txt' into table default.emp ;
+4）创建表是通过insert加载
+
+
+
+-- * load data命令只是简单的把文件移动了位置（ local --->  HDFS ）
+-- * 而不会去判断分隔符是否正确
+-- * 企业里面，我们是根据原文件去判断创建表时候需要指定的分隔符
+
+
+LOAD DATA [LOCAL] INPATH ‘filepath’
+[VOERWRITE] INO TABLE tablename
+[PARTITION (partcol]=val1,partcol2=val2....)]
+
+load data local inpath ‘/emp.txt’ overwrite into table emp;
+load data local inpath ‘/dept.txt’ overwrite into table dept;
+
+-- 1、加载本地文件到Hive表
+	load data local inpath '/home/beifeng/emp.txt'  into table emp;
+-- *2、加载本地文件覆盖写入Hive表
+	load data local inpath '/home/beifeng/emp.txt'  overwrite into table emp;
+-- * append追加
+-- * 覆盖，实际企业环境，更常用
+
+
+

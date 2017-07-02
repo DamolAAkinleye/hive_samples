@@ -1,0 +1,88 @@
+select xpath ('<a><b id="1"><c/></b><b id="2"><c/></b></a>','/descendant::c/ancestor::b/@id') from t1 limit 1 ;
+
+ select xpath('<a><b>b1</b><b>b2</b></a>','a/*') from src limit 1 ;
+ 
+ select xpath('<a><b>b1</b><b>b2</b></a>','a/*/text()') from src limit 1 ;
+ 
+ select xpath('<a><b id="foo">b1</b><b id="bar">b2</b></a>','//@id') from src limit 1 ;
+ 
+ 
+  SELECT xpath ('<a><b class="bb">b1</b><b>b2</b><b>b3</b><c class="bb">c1</c><c>c2</c></a>', 'a/*[@class="bb"]/text()') FROM src LIMIT 1 ;
+  
+  SELECT xpath_string ('<a><b>bb</b><c>cc</c></a>', 'a/b') FROM src LIMIT 1 ;
+  
+  SELECT xpath_string ('<a><b>bb</b><c>cc</c></a>', 'a') FROM src LIMIT 1 ;
+  
+  SELECT xpath_string ('<a><b>bb</b><c>cc</c></a>', 'a/d') FROM src LIMIT 1 ;
+  
+  
+   SELECT xpath_string ('<a><b>b1</b><b>b2</b></a>', '//b') FROM src LIMIT 1 ;
+   
+   SELECT xpath_string ('<a><b>b1</b><b>b2</b></a>', 'a/b[2]') FROM src LIMIT 1 ;
+   
+   SELECT xpath_string ('<a><b>b1</b><b id="b_2">b2</b></a>', 'a/b[@id="b_2"]') FROM src LIMIT 1 ;
+   
+    SELECT xpath_boolean ('<a><b>b</b></a>', 'a/b') FROM src LIMIT 1 ;
+	
+	SELECT xpath_boolean ('<a><b>b</b></a>', 'a/c') FROM src LIMIT 1 ;
+	
+	 SELECT xpath_boolean ('<a><b>b</b></a>', 'a/b = "b"') FROM src LIMIT 1 ; 
+	 
+	 SELECT xpath_boolean ('<a><b>10</b></a>', 'a/b < 10') FROM src LIMIT 1 ;
+	 
+	
+	SELECT xpath_int ('<a>b</a>', 'a = 10') FROM src LIMIT 1 ;
+0
+Non-numeric match:
+ SELECT xpath_int ('<a>this is not a number</a>', 'a') FROM src LIMIT 1 ;
+0
+SELECT xpath_int ('<a>this 2 is not a number</a>', 'a') FROM src LIMIT 1 ;
+0
+Adding values:
+SELECT xpath_int ('<a><b class="odd">1</b><b class="even">2</b><b class="odd">4</b><c>8</c></a>', 'sum(a/*)') FROM src LIMIT 1 ;
+15
+SELECT xpath_int ('<a><b class="odd">1</b><b class="even">2</b><b class="odd">4</b><c>8</c></a>', 'sum(a/b)') FROM src LIMIT 1 ;
+7
+SELECT xpath_int ('<a><b class="odd">1</b><b class="even">2</b><b class="odd">4</b><c>8</c></a>', 'sum(a/b[@class="odd"])') FROM src LIMIT 1 ;
+5
+Overflow:
+SELECT xpath_int ('<a><b>2000000000</b><c>40000000000</c></a>', 'a/b * a/c') FROM src LIMIT 1 ;
+2147483647
+xpath_float, xpath_double, xpath_number
+Similar to xpath_short, xpath_int and xpath_long but with floating point semantics. Non-matches result in zero. However,
+non-numeric matches result in NaN. Note that xpath_number() is an alias for xpath_double().
+No match:
+SELECT xpath_double ('<a>b</a>', 'a = 10') FROM src LIMIT 1 ;
+0.0
+Non-numeric match:
+SELECT xpath_double ('<a>this is not a number</a>', 'a') FROM src LIMIT 1 ;
+NaN
+A very large number:
+SELECT xpath_double ('<a><b>2000000000</b><c>40000000000</c></a>', 'a/b * a/c') FROM src LIMIT 1 ;
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

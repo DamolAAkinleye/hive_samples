@@ -1,0 +1,70 @@
+FROM (
+
+MAP doctext USING 'python wc_mapper.py' AS (word, cnt)
+
+FROM docs
+
+CLUSTER BY word
+
+) a
+
+REDUCE word, cnt USING 'python wc_reduce.py'; FROM (
+
+MAP doctext USING 'python wc_mapper.py' AS (word, cnt)
+
+FROM docs
+
+CLUSTER BY word
+
+) a
+
+REDUCE word, cnt USING 'python wc_reduce.py';
+
+
+-doctext: 是输入
+
+--word, cnt: 是map程序的输出
+
+--CLUSTER BY: 将wordhash后，又作为reduce程序的输入
+
+并且map程序、reduce程序可以单独使用，如：
+
+FROM (
+
+FROM session_table
+
+SELECT sessionid, tstamp, data
+
+DISTRIBUTE BY sessionid SORT BY tstamp
+
+) a
+
+REDUCE sessionid, tstamp, data USING 'session_reducer.sh';
+
+FROM (
+
+FROM session_table
+
+SELECT sessionid, tstamp, data
+
+DISTRIBUTE BY sessionid SORT BY tstamp
+
+) a
+
+REDUCE sessionid, tstamp, data USING 'session_reducer.sh';
+
+
+--DISTRIBUTE BY: 用于给reduce程序分配行数据
+
+
+
+
+
+
+
+
+
+
+
+
+

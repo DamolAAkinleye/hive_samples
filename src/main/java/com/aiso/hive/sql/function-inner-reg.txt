@@ -1,0 +1,57 @@
+A like B
+字符 ”_" 任意单个字符
+% 任意数量的字符
+
+select "aaaaa" like "%aaa%" from test_struct limit 10;
+like不是正则，而是通配符。
+这个通配符可以看一下SQL的标准，例如%代表任意多个字符。
+
+
+-------------------------------------------
+A RLIKE B
+select 1 from dual where 'footbar' rlike ^f.*r$;
+
+
+rlike是正则，正则的写法与java一样。'\'需要使用'\\',例如'\w'需要使用'\\w'
+
+hive> select "aaaaa" rlike "%aaa%" from test_struct limit 10;
+
+%是sql中的通配符，所以用like的输出为true。
+
+而正则里没有%的表示方式，所以输出false
+
+rlike的话，用相应的正则表达式即可
+select "aaaaa" rlike ".*aaa.*" from test_struct limit 10;
+select "aaaaa" rlike "^aaa" from test_struct limit 10;
+select "aaa" rlike "aa\\w" from test_struct limit 2;
+select "aaa" rlike "aa\\w+" from test_struct limit 2;
+
+
+rp_name_cn like '%不含早%' 与rp_name_cn rlike '不含早'的效果一致
+
+----------------------------------------------------
+regexp_replace (string A,String B,String C)
+
+select regexp_replace('foobar','oo|ar','') from dual;
+> fb
+
+-------------------------------------------------------------
+
+regexp_extract (string subject,string pattern,int index)
+
+select regexp_extract('foothebar','foo(.*?)(bar)',1) from dual;
+
+select regexp_extract('979|7.10.80|8684',*\\|(.*),1) from dual limit 1;
+
+贪婪匹配
+
+979|7.10.80
+
+select regexp_extract('979|7.10.80|8684','(.*?)\\|(.*)',1) from dual limit 1;
+
+979
+--------------------------------------------------------
+
+
+
+

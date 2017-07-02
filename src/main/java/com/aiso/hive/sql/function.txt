@@ -1,0 +1,720 @@
+
+
+--注册
+> create function date_converter as 'com.ibeifeng.offline.data.analysis.transformer.hive.udf.DateDimensionConverterUDF' using jar 'hdfs://hadoop-senior:8020/jars/transformer-0.0.1.jar'
+> create function kpi_converter as 'com.ibeifeng.offline.data.analysis.transformer.hive.udf.KpiDimensionConverterUDF' using jar 'hdfs://hadoop-senior:8020/jars/transformer-0.0.1.jar'
+> create function platform_converter as 'com.ibeifeng.offline.data.analysis.transformer.hive.udf.PlatformDimensionConverterUDF' using jar 'hdfs://hadoop-senior:8020/jars/transformer-0.0.1.jar'
+
+SHOW FUNCTIONS "a.*";
+
+ desc function extended substring ;
+substring('Facebook', 5, 1)
+'b'
+下标从1开始计数
+
+
+DROP TEMPORARY FUNCTION [IF EXISTS] function_name;
+CREATE TEMPORARY FUNCTION function_name AS class_name;
+CREATE FUNCTION [db_name.]function_name AS class_name
+  [USING JAR|FILE|ARCHIVE 'file_uri' [, JAR|FILE|ARCHIVE 'file_uri'] ];
+
+
+
+DROP FUNCTION [IF EXISTS] function_name;
+RELOAD FUNCTION;
+
+
+SHOW FUNCTIONS;
+DESCRIBE FUNCTION <function_name>;
+DESCRIBE FUNCTION EXTENDED <function_name>;
+
+Operator
+A = B
+A == B
+A <=> B
+A <> B
+A != B
+A < B
+A <= B
+A > B
+A >= B
+
+A [NOT] BETWEEN B AND C
+
+A IS NULL
+
+A IS NOT NULL
+
+A [NOT] LIKE B
+
+A RLIKE B
+
+ SELECT 'fb' rlike '.*' FROM src LIMIT 1;
+
+
+
+A REGEXP B
+
+A + B
+A - B
+A * B
+A / B
+A % B
+A & B
+A | B
+A ^ B
+~A
+
+A AND B
+A && B
+A OR B
+A || B
+NOT A
+! A
+A IN (val1, val2, ...)
+A NOT IN (val1, val2, ...)
+[NOT] EXISTS (subquery)
+
+
+map	(key1, value1, key2, value2, ...)
+struct	(val1, val2, val3, ...)
+named_struct	(name1, val1, name2, val2, ...)
+array	(val1, val2, ...)
+create_union	(tag, val1, val2, ...)
+
+
+A[n]
+A is an Array and n is an int
+
+M[key]
+
+S.x
+
+Name (Signature)
+Name (Signature)
+round(DOUBLE a)
+round(DOUBLE a, INT d)
+bround(DOUBLE a)
+bround(DOUBLE a, INT d)
+floor(DOUBLE a)
+ceil(DOUBLE a), ceiling(DOUBLE a)
+rand(), rand(INT seed)
+exp(DOUBLE a), exp(DECIMAL a)
+ln(DOUBLE a), ln(DECIMAL a)
+log10(DOUBLE a), log10(DECIMAL a)
+log2(DOUBLE a), log2(DECIMAL a)
+log(DOUBLE base, DOUBLE a)
+log(DECIMAL base, DECIMAL a)
+pow(DOUBLE a, DOUBLE p), power(DOUBLE a, DOUBLE p)
+sqrt(DOUBLE a), sqrt(DECIMAL a)
+bin(BIGINT a)
+hex(BIGINT a) hex(STRING a) hex(BINARY a)
+unhex(STRING a)
+conv(BIGINT num, INT from_base, INT to_base), conv(STRING num, INT from_base, INT to_base)
+abs(DOUBLE a)
+pmod(INT a, INT b), pmod(DOUBLE a, DOUBLE b)
+sin(DOUBLE a), sin(DECIMAL a)
+asin(DOUBLE a), asin(DECIMAL a)
+cos(DOUBLE a), cos(DECIMAL a)
+acos(DOUBLE a), acos(DECIMAL a)
+tan(DOUBLE a), tan(DECIMAL a)
+atan(DOUBLE a), atan(DECIMAL a)
+degrees(DOUBLE a), degrees(DECIMAL a)
+radians(DOUBLE a), radians(DOUBLE a)
+positive(INT a), positive(DOUBLE a)
+negative(INT a), negative(DOUBLE a)
+sign(DOUBLE a), sign(DECIMAL a)
+e()
+pi()
+factorial(INT a)
+cbrt(DOUBLE a)
+shiftleft(TINYINT|SMALLINT|INT a, INT b)
+shiftleft(BIGINT a, INT b)
+shiftright(TINYINT|SMALLINT|INT a, INT b)
+shiftright(BIGINT a, INT b)
+shiftrightunsigned(TINYINT|SMALLINT|INT a, INT b),
+shiftrightunsigned(BIGINT a, INT b)
+greatest(T v1, T v2, ...)
+least(T v1, T v2, ...)
+
+
+
+int
+int
+array<K>
+array<V>
+boolean
+array<t>
+
+
+类型转换函数
+binary(string|binary)
+
+cast(expr as <type>)
+
+
+
+
+from_unixtime(bigint unixtime[, string format])
+unix_timestamp()
+unix_timestamp(string date)
+unix_timestamp(string date, string pattern)
+to_date(string timestamp)
+
+year(string date)
+quarter(date/timestamp/string)
+month(string date)
+day(string date) dayofmonth(date)
+hour(string date)
+minute(string date)
+second(string date)
+weekofyear(string date)
+datediff(string enddate, string startdate)
+date_add(string startdate, int days)
+
+date_sub(string startdate, int days)
+
+from_utc_timestamp(timestamp, string timezone)
+to_utc_timestamp(timestamp, string timezone)
+current_date
+current_timestamp
+add_months(string start_date, int num_months)
+last_day(string date)
+next_day(string start_date, string day_of_week)
+trunc(string date, string format)
+months_between(date1, date2)
+date_format(date/timestamp/string ts, string fmt)
+
+
+
+
+from_unixtime(bigint unixtime[, string format])
+unix_timestamp()
+unix_timestamp(string date)
+unix_timestamp(string date, string pattern)
+to_date(string timestamp)
+
+year(string date)
+quarter(date/timestamp/string)
+month(string date)
+day(string date) dayofmonth(date)
+hour(string date)
+minute(string date)
+second(string date)
+weekofyear(string date)
+datediff(string enddate, string startdate)
+date_add(string startdate, int days)
+
+date_sub(string startdate, int days)
+
+from_utc_timestamp(timestamp, string timezone)
+to_utc_timestamp(timestamp, string timezone)
+current_date
+current_timestamp
+add_months(string start_date, int num_months)
+last_day(string date)
+next_day(string start_date, string day_of_week)
+trunc(string date, string format)
+months_between(date1, date2)
+date_format(date/timestamp/string ts, string fmt)
+
+
+
+
+if(boolean testCondition, T valueTrue, T valueFalseOrNull)
+isnull( a )
+isnotnull ( a )
+nvl(T value, T default_value)
+COALESCE(T v1, T v2, ...)
+CASE a WHEN b THEN c [WHEN d THEN e]* [ELSE f] END
+CASE WHEN a THEN b [WHEN c THEN d]* [ELSE e] END
+
+
+
+
+
+
+
+ascii(string str)
+base64(binary bin)
+concat(string|binary A, string|binary B...)
+context_ngrams(array<array<string>>, array<string>, int K, int pf)
+concat_ws(string SEP, string A, string B...)
+concat_ws(string SEP, array<string>)
+decode(binary bin, string charset)
+encode(string src, string charset)
+find_in_set(string str, string strList)
+format_number(number x, int d)
+get_json_object(string json_string, string path)
+in_file(string str, string filename)
+instr(string str, string substr)
+length(string A)
+locate(string substr, string str[, int pos])
+lower(string A) lcase(string A)
+lpad(string str, int len, string pad)
+ltrim(string A)
+ngrams(array<array<string>>, int N, int K, int pf)
+parse_url(string urlString, string partToExtract [, string keyToExtract])
+printf(String format, Obj... args)
+regexp_extract(string subject, string pattern, int index)
+regexp_replace(string INITIAL_STRING, string PATTERN, string REPLACEMENT)
+repeat(string str, int n)
+reverse(string A)
+rpad(string str, int len, string pad)
+rtrim(string A)
+sentences(string str, string lang, string locale)
+space(int n)
+split(string str, string pat)
+str_to_map(text[, delimiter1, delimiter2])
+substr(string|binary A, int start) substring(string|binary A, int start)
+substr(string|binary A, int start, int len) substring(string|binary A, int start, int len)
+substring_index(string A, string delim, int count)
+translate(string|char|varchar input, string|char|varchar from, string|char|varchar to)
+
+trim(string A)
+unbase64(string str)
+upper(string A) ucase(string A)
+initcap(string A)
+levenshtein(string A, string B)
+soundex(string A)
+
+
+
+
+
+
+
+
+java_method(class, method[, arg1[, arg2..]])
+reflect(class, method[, arg1[, arg2..]])
+hash(a1[, a2...])
+current_user()
+current_database()
+md5(string/binary)
+sha1(string/binary)
+sha(string/binary)
+crc32(string/binary)
+sha2(string/binary, int)
+aes_encrypt(input string/binary, key string/binary)
+aes_decrypt(input binary, key string/binary)
+
+
+
+
+
+count(*), count(expr), count(DISTINCT expr[, expr...])
+
+
+sum(col), sum(DISTINCT col)
+avg(col), avg(DISTINCT col)
+min(col)
+max(col)
+variance(col), var_pop(col)
+var_samp(col)
+stddev_pop(col)
+stddev_samp(col)
+covar_pop(col1, col2)
+covar_samp(col1, col2)
+corr(col1, col2)
+percentile(BIGINT col, p)
+percentile(BIGINT col, array(p1 [, p2]...))
+percentile_approx(DOUBLE col, p [, B])
+percentile_approx(DOUBLE col, array(p1 [, p2]...) [, B])
+histogram_numeric(col, b)
+collect_set(col)
+collect_list(col)
+ntile(INTEGER x)
+
+
+
+---------####################UDTF======================
+
+
+
+
+
+
+
+
+explode(ARRAY)
+
+
+explode(MAP)
+
+-- Using the syntax "SELECT udtf(col) AS colAlias..." has a few limitations:
+-- No other expressions are allowed in SELECT
+-- SELECT pageid, explode(adid_list) AS myCol... is not supported
+-- UDTF's can't be nested
+-- SELECT explode(explode(adid_list)) AS myCol... is not supported
+-- GROUP BY / CLUSTER BY / DISTRIBUTE BY / SORT BY is not supported
+-- SELECT explode(adid_list) AS myCol ... GROUP BY myCol is not supported
+
+
+SELECT explode(myCol) AS myNewCol FROM myTable;
+
+
+SELECT explode(myMap) AS (myMapKey, myMapValue) FROM myMapTable;
+posexplode
+
+
+SELECT posexplode(myCol) AS pos, myNewCol FROM myTable;
+
+lateralView: LATERAL VIEW udtf(expression) tableAlias AS columnAlias (',' columnAlias)*
+fromClause: FROM baseTable (lateralView)*
+
+pageid
+adid_list
+front_page
+[1, 2, 3]
+contact_page
+[3, 4, 5]
+
+-- A lateral view with explode() can be used to convert adid_list into separate rows using the query:
+
+SELECT pageid, adid
+FROM pageAds LATERAL VIEW explode(adid_list) adTable AS adid;
+
+SELECT adid, count(1)
+FROM pageAds LATERAL VIEW explode(adid_list) adTable AS adid
+GROUP BY adid;
+
+SELECT * FROM exampleTable
+LATERAL VIEW explode(col1) myTable1 AS myCol1
+LATERAL VIEW explode(myCol1) myTable2 AS myCol2;
+
+SELECT myCol1, col2 FROM baseTable
+LATERAL VIEW explode(col1) myTable1 AS myCol1;
+
+
+
+
+SELECT myCol1, myCol2 FROM baseTable
+LATERAL VIEW explode(col1) myTable1 AS myCol1
+LATERAL VIEW explode(col2) myTable2 AS myCol2;
+
+
+SELEC * FROM src LATERAL VIEW explode(array()) C AS a limit 10;
+
+SELECT * FROM src LATERAL VIEW OUTER explode(array()) C AS a limit 10;
+
+
+inline(ARRAY<STRUCT[,STRUCT]>)
+
+
+explode(array<TYPE> a)
+
+
+json_tuple(jsonStr, k1, k2, ...)
+select a.timestamp, get_json_object(a.appevents, '$.eventid'), get_json_object(a.appenvets, '$.eventname') from log a;
+
+select a.timestamp, b.*
+from log a lateral view json_tuple(a.appevent, 'eventid', 'eventname') b as f1, f2;
+
+
+parse_url_tuple(url, p1, p2, ...)
+SELECT b.*
+FROM src LATERAL VIEW parse_url_tuple(fullurl, 'HOST', 'PATH', 'QUERY', 'QUERY:id') b as host, path, query, query_id LIMIT 1;
+
+
+select f(col) as fc, count(*) from table_name group by fc;
+
+
+
+posexplode(ARRAY)
+stack(INT n, v_1, v_2, ..., v_k)
+
+select sq.fc,col1,col2,...,colN,count(*) from
+  (select f(col) as fc,col1,col2,...,colN from table_name) sq
+ group by sq.fc,col1,col2,...,colN;
+ 
+ 
+
+select f(col) as fc, count(*) from table_name group by f(col);
+
+
+####################################
+
+SELECT length(string_col) FROM table_name;
+
+
+SELECT reducer_udf(my_col, distribute_col, sort_col) FROM
+(SELECT my_col, distribute_col, sort_col FROM table_name DISTRIBUTE BY distribute_col SORT BY distribute_col, sort_col) t
+
+
+
+------------------
+
+
+ 	tab_name
+1	!
+2	!=
+3	%
+4	&
+5	*
+6	+
+7	-
+8	/
+9	<
+10	<=
+11	<=>
+12	<>
+13	=
+14	==
+15	>
+16	>=
+17	^
+18	abs
+19	acos
+20	add_months
+21	and
+22	array
+23	array_contains
+24	ascii
+25	asin
+26	assert_true
+27	atan
+28	avg
+29	base64
+
+30	between
+
+31	bin
+
+32	case
+
+33	cbrt
+
+34	ceil
+35	ceiling
+36	coalesce
+
+
+37	collect_list
+
+
+38	collect_set
+
+\在Hive的是用中，我们经常会有这种需求：
+ 按照同一个id进行Ｇroup By，然后对另一个字段去重，例如下面得数据：
+ id pic
+ 1 1.jpg
+ 2 2.jpg
+ 1 1.jpg
+
+ 此时，是用DISTINCT或者2 col得Group By都是不行得，我们可以用这个UDAF：collect_set(col)，它将对同一个group by 得key进行set去重后，转换为一个array。
+
+ SELECT id, CONCAT_WS(',', COLLECT_SET(pic)) FROM tbl GROUP BY id
+ 在这里CONCAT_WS是UDF，COLLECT_SET是UDAF，它将group后的pic去重，并转换为了array，方便udf是用。
+ 如果不需要去重，可以使用COLLECT_LIST。
+
+39	compute_stats
+40	concat
+41	concat_ws
+42	context_ngrams
+43	conv
+44	corr
+45	cos
+46	count
+47	covar_pop
+48	covar_samp
+49	create_union
+50	cume_dist
+51	current_database
+52	current_date
+53	current_timestamp
+54	current_user
+55	date_add
+56	date_sub
+57	datediff
+58	day
+59	dayofmonth
+60	decode
+61	degrees
+62	dense_rank
+63	div
+64	e
+65	elt
+66	encode
+67	ewah_bitmap
+68	ewah_bitmap_and
+69	ewah_bitmap_empty
+70	ewah_bitmap_or
+71	exp
+72	explode
+73	field
+74	find_in_set
+75	first_value
+76	floor
+77	format_number
+78	from_unixtime
+79	from_utc_timestamp
+80	get_json_object
+81	greatest
+82	hash
+83	hex
+84	histogram_numeric
+85	hour
+86	if
+87	in
+88	in_file
+89	index
+90	initcap
+91	inline
+92	instr
+93	isnotnull
+94	isnull
+95	java_method
+96	json_tuple
+97	lag
+98	last_day
+99	last_value
+100	lcase
+101	lead
+102	least
+103	length
+104	levenshtein
+105	like
+106	ln
+107	locate
+108	log
+109	log10
+110	log2
+111	lower
+112	lpad
+113	ltrim
+114	map
+115	map_keys
+116	map_values
+117	matchpath
+118	max
+119	min
+120	minute
+121	month
+122	named_struct
+123	negative
+124	next_day
+125	ngrams
+126	noop
+127	noopstreaming
+128	noopwithmap
+129	noopwithmapstreaming
+130	not
+131	ntile
+132	nvl
+133	or
+134	parse_url
+135	parse_url_tuple
+136	percent_rank
+137	percentile
+138	percentile_approx
+139	pi
+140	pmod
+141	posexplode
+142	positive
+143	pow
+144	power
+145	printf
+146	radians
+147	rand
+148	rank
+149	reflect
+150	reflect2
+151	regexp
+152	regexp_extract
+153	regexp_replace
+154	repeat
+155	reverse
+156	rlike
+157	round
+158	row_number
+159	rpad
+160	rtrim
+161	second
+162	sentences
+163	sign
+164	sin
+165	size
+166	sort_array
+167	soundex
+168	space
+169	split
+170	sqrt
+171	stack
+172	std
+173	stddev
+174	stddev_pop
+175	stddev_samp
+176	str_to_map
+177	struct
+178	substr
+179	substring
+180	sum
+181	tan
+182	to_date
+183	to_unix_timestamp
+184	to_utc_timestamp
+185	translate
+186	trim
+187	trunc
+188	ucase
+189	unbase64
+190	unhex
+191	unix_timestamp
+192	upper
+193	var_pop
+194	var_samp
+195	variance
+196	weekofyear
+197	when
+198	windowingtablefunction
+199	xpath
+200	xpath_boolean
+201	xpath_double
+202	xpath_float
+203	xpath_int
+204	xpath_long
+205	xpath_number
+206	xpath_short
+207	xpath_string
+208	year
+209	|
+210	~
+
+
+---------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
